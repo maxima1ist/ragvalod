@@ -103,7 +103,7 @@ flowchart LR
 - **gRPC (grpcio + protobuf)** — межсервисное взаимодействие.
 - **LlamaIndex** — чанкинг и работа с документами в Ingestion Service.
 - **Sentence Transformers** — эмбеддинги (bi-encoder) и реранкер (cross-encoder, например `BAAI/bge-reranker-base`).
-- **qdrant-client** — доступ к Qdrant по gRPC.
+- **qdrant-client** — доступ к Qdrant по gRPC. Qdrant выбран среди альтернатив (pgvector, Milvus, Weaviate, Chroma, FAISS): нативный gRPC вписывается во внутреннюю коммуникацию системы, один лёгкий Rust-контейнер без внешних зависимостей (у Milvus — etcd + MinIO), фильтрация по payload встроена в HNSW-поиск, upsert по детерминированным ID для инкрементальных обновлений, кластерный режим для этапа масштабирования.
 - **vLLM** — локальный инференс LLM (отдельный контейнер, по профилю).
 - **Jinja2** — шаблоны промптов.
 - **Docker / Docker Compose (с профилями)** — контейнеризация.
