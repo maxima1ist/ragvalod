@@ -15,6 +15,8 @@
 
 Легенда: `[ ]` TODO · `[~]` IN PROGRESS · `[x]` DONE · `[-]` SKIPPED
 
+> Ревизия плана 2026-07-07: самописный Inference Service заменён на LiteLLM Proxy (AI gateway) + Infinity для эмбеддера/реранкера (см. раздел 2.2 плана); этапы 3 и 4 переставлены местами (ингест зависит от эмбеддингов через LiteLLM).
+
 ---
 
 ## Этап 0: Подготовка окружения и инфраструктуры — TODO
@@ -26,7 +28,7 @@
 
 ## Этап 1: gRPC-контракты — TODO
 
-- [ ] **Шаг 1.1:** `.proto` для ingestion/rag/inference — TODO
+- [ ] **Шаг 1.1:** `.proto` для ingestion/rag — TODO
 - [ ] **Шаг 1.2:** Кодогенерация клиентов/серверов, gRPC health-checks — TODO
 
 ## Этап 2: Vector Database (Qdrant) — TODO
@@ -34,30 +36,30 @@
 - [ ] **Шаг 2.1:** Поднять Qdrant, проверить UI (6333) и gRPC (6334) — TODO
 - [ ] **Шаг 2.2:** Smoke-скрипт в корневом `scripts/`: создание коллекции, запись/чтение векторов по gRPC — TODO
 
-## Этап 3: Ingestion Service (локальные файлы) — TODO
+## Этап 3: Model Gateway (LiteLLM + Infinity) — TODO
 
-- [ ] **Шаг 3.1:** Каркас gRPC-сервиса с job-моделью — TODO
-- [ ] **Шаг 3.2:** Абстракция `DataSource` + фабрика адаптеров — TODO
-- [ ] **Шаг 3.3:** Адаптер локальных файлов (.txt, .md, .pdf, .docx) — TODO
-- [ ] **Шаг 3.4:** Пайплайн: чанкинг (LlamaIndex) + эмбеддинги (SentenceTransformer) — TODO
-- [ ] **Шаг 3.5:** Запись в Qdrant, `upsert` по детерминированным ID, маркер инициализации по завершению job — TODO
-- [ ] **Шаг 3.6:** Приём кредов через `TriggerIngest` (в памяти на время задачи) — TODO
-- [ ] **Шаг 3.7:** Debug-скрипт `ingestion/scripts/run_debug.sh`, unit + интеграционные тесты — TODO
+- [ ] **Шаг 3.1:** Сервис `litellm` в compose (DB-less, `configs/litellm.yaml`, алиасы chat/embedder/reranker) — TODO
+- [ ] **Шаг 3.2:** Сервис `infinity` в compose (эмбеддер + реранкер, CPU), маппинг алиасов — TODO
+- [ ] **Шаг 3.3:** Smoke-скрипт в корневом `scripts/`: chat, embeddings (батч), rerank через LiteLLM — TODO
 
-## Этап 4: Inference Service (провайдер proxy) — TODO
+## Этап 4: Ingestion Service (локальные файлы) — TODO
 
-- [ ] **Шаг 4.1:** Каркас gRPC-сервиса, абстракция `InferenceProvider` — TODO
-- [ ] **Шаг 4.2:** `OpenAIProxyProvider` (httpx, параметры генерации, ошибки/таймауты) — TODO
-- [ ] **Шаг 4.3:** Debug-скрипт `inference/scripts/run_debug.sh`, тесты с моком внешнего API — TODO
+- [ ] **Шаг 4.1:** Каркас gRPC-сервиса с job-моделью — TODO
+- [ ] **Шаг 4.2:** Абстракция `DataSource` + фабрика адаптеров — TODO
+- [ ] **Шаг 4.3:** Адаптер локальных файлов (.txt, .md, .pdf, .docx) — TODO
+- [ ] **Шаг 4.4:** Пайплайн: чанкинг (LlamaIndex) + эмбеддинги через LiteLLM (батчами, префиксы модели) — TODO
+- [ ] **Шаг 4.5:** Запись в Qdrant, `upsert` по детерминированным ID, маркер инициализации + имя эмбеддинг-модели по завершению job — TODO
+- [ ] **Шаг 4.6:** Приём кредов через `TriggerIngest` (в памяти на время задачи) — TODO
+- [ ] **Шаг 4.7:** Debug-скрипт `ingestion/scripts/run_debug.sh`, unit + интеграционные тесты — TODO
 
 ## Этап 5: RAG Orchestrator — TODO
 
 - [ ] **Шаг 5.1:** Каркас gRPC-сервиса, `GenerateAnswer` + проверка инициализации данных (`FAILED_PRECONDITION`) — TODO
-- [ ] **Шаг 5.2:** Эмбеддинг запроса — TODO
+- [ ] **Шаг 5.2:** Эмбеддинг запроса через LiteLLM + валидация модели против метаданных коллекции — TODO
 - [ ] **Шаг 5.3:** Первый фильтр: векторный поиск в Qdrant (`top_k`) — TODO
-- [ ] **Шаг 5.4:** Второй фильтр: cross-encoder реранкер (`rerank_top_n`) — TODO
+- [ ] **Шаг 5.4:** Второй фильтр: реранкер через LiteLLM `/rerank` (`rerank_top_n`) — TODO
 - [ ] **Шаг 5.5:** Промпт через Jinja2-шаблон — TODO
-- [ ] **Шаг 5.6:** Вызов Inference Service по gRPC — TODO
+- [ ] **Шаг 5.6:** Генерация через LiteLLM (`chat-default`) — TODO
 - [ ] **Шаг 5.7:** Возврат ответа + использованных чанков — TODO
 - [ ] **Шаг 5.8:** Логирование запросов/ответов (stdout + файл) — TODO
 - [ ] **Шаг 5.9:** Debug-скрипт `rag_orchestrator/scripts/run_debug.sh`, unit + интеграционные тесты — TODO
@@ -79,7 +81,7 @@
 
 - [ ] **Шаг 8.1:** Выбор модели (7B в 4-bit под тестовый стенд) — TODO
 - [ ] **Шаг 8.2:** Сервис `vllm` в compose под профилем `local-llm` — TODO
-- [ ] **Шаг 8.3:** `LocalVLLMProvider` в Inference Service — TODO
+- [ ] **Шаг 8.3:** Перевод алиаса `chat-default` на vLLM-бекенд в `configs/litellm.yaml` — TODO
 - [ ] **Шаг 8.4:** Полный цикл через Gateway на локальной модели, без OOM — TODO
 - [ ] **Шаг 8.5:** Нагрузочное тестирование, тюнинг параметров vLLM — TODO
 
