@@ -57,14 +57,14 @@ UI на данном этапе не нужен, также пока все до
 
 ```mermaid
 flowchart LR
-    User((Пользователь)) -- REST/HTTPS --> GW[API Gateway<br/>FastAPI]
+    User((Пользователь)) -- REST/HTTPS --> GW[API Gateway]
     GW -- gRPC --> ING[Ingestion Service]
     GW -- gRPC --> RAG[RAG Orchestrator]
-    ING -- OpenAI API --> LLM[LiteLLM Proxy<br/>AI Gateway]
+    ING -- OpenAI API --> LLM[LiteLLM Proxy]
     RAG -- OpenAI API --> LLM
-    LLM -- HTTP --> EXT[Внешние API<br/>OpenAI, Anthropic, ...]
-    LLM -- OpenAI API --> VLLM[vLLM<br/>compose-профиль local-llm]
-    LLM -- HTTP --> INFY[Infinity<br/>эмбеддер + реранкер]
+    LLM -- HTTP --> EXT[Внешние API]
+    LLM -- OpenAI API --> VLLM[vLLM]
+    LLM -- HTTP --> INFY[Infinity]
     ING -- gRPC, write --> QD[(Qdrant)]
     RAG -- gRPC, read --> QD
     GW -. HTTP/SDK .-> LF[Langfuse]
@@ -89,7 +89,7 @@ flowchart LR
 
 Trade-off, принятый осознанно: это исключение из правила «внутренние коммуникации по gRPC» — LiteLLM говорит только по HTTP. Считаем его инфраструктурной компонентой (как Qdrant и Langfuse), с которой общаются по её нативному протоколу; gRPC остаётся для самописных сервисов.
 
-Сам LiteLLM ничего не хостит — это stateless-роутер (используем DB-less режим с конфигом `configs/litellm.yaml`; Postgres нужен только для virtual keys/бюджетов, которые нам не нужны). Модели задаются алиасами:
+Сам LiteLLM ничего не хостит — это stateless-роутер. Запускаем его в **DB-less режиме, без Postgres**: вся конфигурация статически задаётся в `configs/litellm.yaml`, переменная `DATABASE_URL` не задаётся вовсе. Postgres в LiteLLM опционален и нужен только для virtual keys, персистентных бюджетов/учёта трат и Admin UI — всё это не нужно, когда потребители proxy — собственные сервисы в одной сети (аутентификация при необходимости — единым `LITELLM_MASTER_KEY` из env). Роутинг, ретраи/фолбэки, кеширование и интеграция с Langfuse в DB-less режиме работают полноценно. Модели задаются алиасами:
 
 ```yaml
 model_list:
@@ -227,7 +227,7 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 
 Идёт до Ingestion Service, потому что ингест зависит от эмбеддингов через LiteLLM.
 
-**Шаг 3.1:** Сервис `litellm` в compose (DB-less режим, конфиг `configs/litellm.yaml`): алиасы `chat-default` (первый бекенд — внешний OpenAI-совместимый API), `embedder-default`, `reranker-default`. Ключи внешних API — через переменные окружения.
+**Шаг 3.1:** Сервис `litellm` в compose (DB-less режим — без Postgres и `DATABASE_URL`, см. раздел 2.2; конфиг `configs/litellm.yaml`): алиасы `chat-default` (первый бекенд — внешний OpenAI-совместимый API), `embedder-default`, `reranker-default`. Ключи внешних API — через переменные окружения.
 
 **Шаг 3.2:** Сервис `infinity` в compose (CPU): эмбеддер `intfloat/multilingual-e5-small` и реранкер `BAAI/bge-reranker-v2-m3` в одном контейнере; маппинг алиасов `embedder-default`/`reranker-default` на него в конфиге LiteLLM. Volume под кэш HuggingFace.
 
