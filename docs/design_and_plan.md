@@ -57,14 +57,14 @@ UI на данном этапе не нужен, также пока все до
 
 ```mermaid
 flowchart LR
-    User((Пользователь)) -- REST/HTTPS --> GW[API Gateway]
+    User((Пользователь)) -- REST/HTTPS --> GW[API Gateway<br/>FastAPI]
     GW -- gRPC --> ING[Ingestion Service]
     GW -- gRPC --> RAG[RAG Orchestrator]
-    ING -- OpenAI API --> LLM[LiteLLM Proxy]
+    ING -- OpenAI API --> LLM[LiteLLM Proxy<br/>AI Gateway]
     RAG -- OpenAI API --> LLM
-    LLM -- HTTP --> EXT[Внешние API]
-    LLM -- OpenAI API --> VLLM[vLLM]
-    LLM -- HTTP --> INFY[Infinity]
+    LLM -- HTTP --> EXT[Внешние API<br/>OpenAI, Anthropic, ...]
+    LLM -- OpenAI API --> VLLM[vLLM<br/>compose-профиль local-llm]
+    LLM -- HTTP --> INFY[Infinity<br/>эмбеддер + реранкер]
     ING -- gRPC, write --> QD[(Qdrant)]
     RAG -- gRPC, read --> QD
     GW -. HTTP/SDK .-> LF[Langfuse]
