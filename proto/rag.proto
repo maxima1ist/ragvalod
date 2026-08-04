@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package ragvalod.rag.v1;
+
+option py_generic_services = false;
+
+// RAG Orchestrator: embed query, retrieve, rerank, prompt, generate.
+service RagService {
+  // Generate an answer grounded in retrieved chunks.
+  // Returns FAILED_PRECONDITION when data is not initialized (see design §2.4).
+  rpc GenerateAnswer(GenerateAnswerRequest) returns (GenerateAnswerResponse);
+
+  // Data readiness: initialization marker + per-source markers from Qdrant.
+  // Used by Gateway for GET /health; Gateway never talks to Qdrant directly.
+  rpc GetDataStatus(GetDataStatusRequest) returns (GetDataStatusResponse);
+}
+
+message RetrievalParams {
+  // Bi-encoder top_k (default 50 if unset / 0).
+  int32 top_k = 1;
+  // Cross-encoder keep-n after rerank (default 5 if unset / 0).
+  int32 rerank_top_n = 2;
+}
+
+message GenerationParams {
+  float temperature = 1;
+  int32 max_tokens = 2;
+}
+
+message GenerateAnswerRequest {
+  string query = 1;
+  RetrievalParams retrieval = 2;
+  GenerationParams generation = 3;
+}
+
+message UsedChunk {
+  string id = 1;
+  string text = 2;
+  string source = 3;
+  string title = 4;
+  string section_path = 5;
+  float score = 6;
+}
+
+message GenerateAnswerResponse {
+  string answer = 1;
+  repeated UsedChunk used_chunks = 2;
+}
+
+message SourceMarker {
+  string source_name = 1;
+  // ISO-8601 timestamp of last successful ingest for this source.
+  string ingested_at = 2;
+  int32 document_count = 3;
+}
+
+message GetDataStatusRequest {}
+
+message GetDataStatusResponse {
+  // True when the write-once initialization marker is present in Qdrant.
+  bool data_initialized = 1;
+  repeated SourceMarker sources = 2;
+}
