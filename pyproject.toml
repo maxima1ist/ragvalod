@@ -1,0 +1,42 @@
+[project]
+name = "ragvalod"
+version = "0.1.0"
+description = "Personal RAG chatbot with pluggable data sources and inference backends"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9.0",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.25.0",
+    "grpcio-tools>=1.70.0",
+    "mypy-protobuf>=3.6.0",
+    "qdrant-client>=1.14.0,<1.15.0",
+    "types-protobuf>=5.29.0",
+]
+
+[tool.uv.workspace]
+members = ["gateway", "ingestion", "rag_orchestrator", "proto"]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["gateway/src", "ingestion/src", "rag_orchestrator/src", "proto", "scripts"]
+exclude = [
+    "proto/ragvalod_proto",
+    ".venv",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["gateway/tests", "ingestion/tests", "rag_orchestrator/tests", "scripts"]
+pythonpath = ["gateway/src", "ingestion/src", "rag_orchestrator/src", "proto"]

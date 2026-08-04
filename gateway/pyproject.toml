@@ -1,0 +1,30 @@
+[project]
+name = "ragvalod-gateway"
+version = "0.1.0"
+description = "API Gateway — REST entrypoint for ragvalod"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "httpx>=0.28.0",
+    "grpcio>=1.70.0",
+    "pydantic-settings>=2.7.0",
+    "python-dotenv>=1.0.0",
+    "ragvalod-proto",
+]
+
+[project.scripts]
+ragvalod-gateway = "gateway.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gateway"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src/gateway" = "gateway"
+
+[tool.uv.sources]
+ragvalod-proto = { workspace = true }
