@@ -1,7 +1,7 @@
-.PHONY: help sync protos lint test smoke-qdrant up down
+.PHONY: help sync protos lint test smoke-qdrant smoke-litellm up down
 
 help:
-	@echo "Targets: sync | protos | lint | test | smoke-qdrant | up | down"
+	@echo "Targets: sync | protos | lint | test | smoke-qdrant | smoke-litellm | up | down"
 
 sync:
 	uv sync --all-packages --group dev
@@ -22,6 +22,9 @@ test:
 
 smoke-qdrant:
 	uv run python scripts/smoke_qdrant.py
+
+smoke-litellm:
+	uv run python scripts/smoke_litellm.py
 
 up:
 	bash scripts/up.sh
