@@ -20,22 +20,22 @@
 
 ---
 
-## Этап 0: Подготовка окружения и инфраструктуры — TODO
+## Этап 0: Подготовка окружения и инфраструктуры — DONE
 
-- [ ] **Шаг 0.1:** Docker, Docker Compose, NVIDIA Container Toolkit — TODO
-- [ ] **Шаг 0.2:** Структура репозитория — TODO
-- [ ] **Шаг 0.3:** docker-compose.yml (сервисы, профили, сети, volumes) — TODO
-- [ ] **Шаг 0.4:** Тулинг: кодогенерация gRPC, линтеры, pytest, каркасы debug-скриптов — TODO
+- [x] **Шаг 0.1:** Docker, Docker Compose, NVIDIA Container Toolkit — DONE 2026-08-04: Docker 29.1.3 + Compose 2.40.3 + `uv` 0.12.1 установлены (на машине Docker не было — поставлены через apt). NVIDIA Container Toolkit отложен до этапа 8 (нужен только для профиля `local-llm`).
+- [x] **Шаг 0.2:** Структура репозитория — DONE 2026-08-04: каркасы `gateway/`, `ingestion/`, `rag_orchestrator/`, `proto/`, `scripts/`, `configs/` по плану; uv workspace (`pyproject.toml` + member-пакеты).
+- [x] **Шаг 0.3:** docker-compose.yml (сервисы, профили, сети, volumes) — DONE 2026-08-04: `docker-compose.yml` с qdrant/gateway/ingestion/rag_orchestrator; профили `models` (litellm+infinity, добавлено 2026-08-04 — не тянуть модели до этапа 3), `local-llm` (vllm), `monitoring` (langfuse). Volumes `qdrant_data`, `hf_cache`. Проверено: `sudo docker compose up -d --build` → все 4 базовых сервиса healthy.
+- [x] **Шаг 0.4:** Тулинг: кодогенерация gRPC, линтеры, pytest, каркасы debug-скриптов — DONE 2026-08-04: `scripts/generate_protos.sh`, `Makefile` (sync/protos/lint/test/smoke-qdrant/up/down), ruff + pytest, debug-скрипты в `*/scripts/run_debug.sh`, `.env.example`. Проверено: `make lint`, `make test`.
 
-## Этап 1: gRPC-контракты — TODO
+## Этап 1: gRPC-контракты — DONE
 
-- [ ] **Шаг 1.1:** `.proto` для ingestion/rag — TODO
-- [ ] **Шаг 1.2:** Кодогенерация клиентов/серверов, gRPC health-checks — TODO
+- [x] **Шаг 1.1:** `.proto` для ingestion/rag — DONE 2026-08-04: `proto/ingestion.proto` (TriggerIngest/GetJobStatus/ListSources), `proto/rag.proto` (GenerateAnswer/GetDataStatus).
+- [x] **Шаг 1.2:** Кодогенерация клиентов/серверов, gRPC health-checks — DONE 2026-08-04: stubs в `proto/ragvalod_proto/` (пакет `ragvalod-proto`); сервисы отдают standard gRPC Health Checking Protocol; gateway `GET /health`. Проверено: unit-тесты health, compose healthchecks зелёные, ручной Check на :50051/:50052 → SERVING.
 
-## Этап 2: Vector Database (Qdrant) — TODO
+## Этап 2: Vector Database (Qdrant) — DONE
 
-- [ ] **Шаг 2.1:** Поднять Qdrant, проверить UI (6333) и gRPC (6334) — TODO
-- [ ] **Шаг 2.2:** Smoke-скрипт в корневом `scripts/`: создание коллекции, запись/чтение векторов по gRPC — TODO
+- [x] **Шаг 2.1:** Поднять Qdrant, проверить UI (6333) и gRPC (6334) — DONE 2026-08-04: сервис `qdrant` (образ `qdrant/qdrant:v1.14.1`) в compose, порты 6333/6334, volume `qdrant_data`. Проверено: `/readyz` → ready, healthcheck healthy.
+- [x] **Шаг 2.2:** Smoke-скрипт в корневом `scripts/`: создание коллекции, запись/чтение векторов по gRPC — DONE 2026-08-04: `scripts/smoke_qdrant.py` (`prefer_grpc=True`) + интеграционный тест `scripts/test_smoke_qdrant.py`. Проверено: `make smoke-qdrant` / `uv run python scripts/smoke_qdrant.py` → OK; pytest 6 passed.
 
 > ### 🛑 ЧЕКПОИНТ 1 — после этапов 0–2 — [ ] TODO
 >

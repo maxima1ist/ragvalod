@@ -201,7 +201,7 @@ ragvalod/
 
 LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные компоненты на готовых образах: у них нет модулей в репозитории, только конфигурация в compose/`configs/`.
 
-**Шаг 0.3:** docker-compose.yml с сервисами `gateway`, `ingestion`, `rag_orchestrator`, `litellm`, `infinity`, `qdrant`; профили: `local-llm` (vLLM), `monitoring` (Langfuse). Сети, volumes (данные Qdrant, кэш HuggingFace), переменные окружения.
+**Шаг 0.3:** docker-compose.yml с сервисами `gateway`, `ingestion`, `rag_orchestrator`, `litellm`, `infinity`, `qdrant`; профили: `local-llm` (vLLM), `monitoring` (Langfuse), `models` (LiteLLM + Infinity — добавлено 2026-08-04: вынесены из базового подъёма, чтобы `docker compose up` на этапах 0–2 не тянул тяжёлые модели до этапа 3). Сети, volumes (данные Qdrant, кэш HuggingFace), переменные окружения.
 
 **Шаг 0.4:** Настроить общий тулинг: генерация gRPC-кода из `proto/` (makefile/скрипт), линтеры, pytest, каркасы debug-скриптов.
 
