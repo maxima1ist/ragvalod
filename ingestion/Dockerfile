@@ -5,6 +5,8 @@ COPY --from=ghcr.io/astral-sh/uv:0.12.1 /uv /usr/local/bin/uv
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
+    UV_HTTP_TIMEOUT=120 \
+    UV_HTTP_RETRIES=5 \
     PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH"
 
@@ -15,7 +17,10 @@ COPY proto ./proto
 COPY ingestion ./ingestion
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --package ragvalod-ingestion
+    uv sync --frozen --no-dev --package ragvalod-ingestion \
+    || (sleep 5 && uv sync --frozen --no-dev --package ragvalod-ingestion) \
+    || (sleep 15 && uv sync --frozen --no-dev --package ragvalod-ingestion) \
+    || (sleep 30 && uv sync --frozen --no-dev --package ragvalod-ingestion)
 
 EXPOSE 50051
 CMD ["ragvalod-ingestion"]
