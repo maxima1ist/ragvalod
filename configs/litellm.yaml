@@ -1,0 +1,18 @@
+# Stub LiteLLM config for compose bring-up (full aliases wired in stage 3).
+# DB-less mode: no DATABASE_URL.
+model_list:
+  - model_name: chat-default
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: embedder-default
+    litellm_params:
+      model: openai/intfloat/multilingual-e5-small
+      api_base: http://infinity:7997
+  - model_name: reranker-default
+    litellm_params:
+      model: infinity/BAAI/bge-reranker-v2-m3
+      api_base: http://infinity:7997
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY

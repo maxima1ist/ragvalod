@@ -1,0 +1,226 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.14.1
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - ragvalod
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/6333'"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      GATEWAY_HOST: "0.0.0.0"
+      GATEWAY_PORT: "8000"
+      GATEWAY_INGESTION_GRPC_ADDR: "ingestion:50051"
+      GATEWAY_RAG_GRPC_ADDR: "rag_orchestrator:50052"
+      GATEWAY_LITELLM_BASE_URL: "http://litellm:4000"
+    depends_on:
+      ingestion:
+        condition: service_healthy
+      rag_orchestrator:
+        condition: service_healthy
+    networks:
+      - ragvalod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\"",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  ingestion:
+    build:
+      context: .
+      dockerfile: ingestion/Dockerfile
+    ports:
+      - "50051:50051"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      INGESTION_GRPC_HOST: "0.0.0.0"
+      INGESTION_GRPC_PORT: "50051"
+      INGESTION_QDRANT_HOST: "qdrant"
+      INGESTION_QDRANT_GRPC_PORT: "6334"
+      INGESTION_LITELLM_BASE_URL: "http://litellm:4000"
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    networks:
+      - ragvalod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import grpc; from grpc_health.v1 import health_pb2, health_pb2_grpc; c=grpc.insecure_channel('127.0.0.1:50051'); s=health_pb2_grpc.HealthStub(c); r=s.Check(health_pb2.HealthCheckRequest()); assert r.status==1\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  rag_orchestrator:
+    build:
+      context: .
+      dockerfile: rag_orchestrator/Dockerfile
+    ports:
+      - "50052:50052"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      RAG_GRPC_HOST: "0.0.0.0"
+      RAG_GRPC_PORT: "50052"
+      RAG_QDRANT_HOST: "qdrant"
+      RAG_QDRANT_GRPC_PORT: "6334"
+      RAG_LITELLM_BASE_URL: "http://litellm:4000"
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    networks:
+      - ragvalod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import grpc; from grpc_health.v1 import health_pb2, health_pb2_grpc; c=grpc.insecure_channel('127.0.0.1:50052'); s=health_pb2_grpc.HealthStub(c); r=s.Check(health_pb2.HealthCheckRequest()); assert r.status==1\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Full wiring + smoke in stage 3. Included here so compose topology matches the plan.
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./configs/litellm.yaml:/app/config.yaml:ro
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-ragvalod-local}
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--host", "0.0.0.0"]
+    networks:
+      - ragvalod
+    profiles:
+      - models
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness')\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # Model download is heavy; activate with --profile models (stage 3).
+  infinity:
+    image: michaelfeil/infinity:latest
+    ports:
+      - "7997:7997"
+    volumes:
+      - hf_cache:/app/.cache
+    environment:
+      HF_HOME: /app/.cache
+    command:
+      [
+        "v2",
+        "--model-id",
+        "intfloat/multilingual-e5-small",
+        "--model-id",
+        "BAAI/bge-reranker-v2-m3",
+        "--port",
+        "7997",
+      ]
+    networks:
+      - ragvalod
+    profiles:
+      - models
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:7997/health')\"",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
+
+  # Stage 8 — requires NVIDIA Container Toolkit.
+  vllm:
+    image: vllm/vllm-openai:latest
+    profiles:
+      - local-llm
+    runtime: nvidia
+    environment:
+      HUGGING_FACE_HUB_TOKEN: ${HUGGING_FACE_HUB_TOKEN:-}
+      MODEL_NAME: ${MODEL_NAME:-mistralai/Mistral-7B-Instruct-v0.2}
+      MAX_MODEL_LEN: ${MAX_MODEL_LEN:-4096}
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    command:
+      - "--model"
+      - "${MODEL_NAME:-mistralai/Mistral-7B-Instruct-v0.2}"
+      - "--dtype"
+      - "half"
+      - "--max-model-len"
+      - "${MAX_MODEL_LEN:-4096}"
+      - "--enforce-eager"
+      - "--gpu-memory-utilization"
+      - "0.9"
+    networks:
+      - ragvalod
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Stage 9 — monitoring profile.
+  langfuse:
+    image: langfuse/langfuse:2
+    profiles:
+      - monitoring
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: ${LANGFUSE_DATABASE_URL:-}
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-change-me}
+      SALT: ${LANGFUSE_SALT:-change-me}
+      NEXTAUTH_URL: http://localhost:3000
+    networks:
+      - ragvalod
+
+networks:
+  ragvalod:
+    driver: bridge
+
+volumes:
+  qdrant_data:
+  hf_cache:
