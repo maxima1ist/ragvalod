@@ -62,17 +62,17 @@
 - [x] **Шаг 4.6:** Приём кредов через `TriggerIngest` — DONE 2026-08-04: credentials в SourceSpec, только в памяти, `clear()` после источника.
 - [x] **Шаг 4.7:** Debug-скрипт + тесты — DONE 2026-08-04: `ingestion/scripts/run_debug.sh`, `trigger_ingest.py`; unit + live ingest → SUCCEEDED, 5 chunks. pytest 13 passed.
 
-## Этап 5: RAG Orchestrator — TODO
+## Этап 5: RAG Orchestrator — DONE
 
-- [ ] **Шаг 5.1:** Каркас gRPC-сервиса, `GenerateAnswer` + проверка инициализации данных (`FAILED_PRECONDITION`) — TODO
-- [ ] **Шаг 5.2:** Эмбеддинг запроса через LiteLLM + валидация модели против манифеста коллекции — TODO
-- [ ] **Шаг 5.3:** Первый фильтр: векторный поиск в Qdrant (`top_k`) — TODO
-- [ ] **Шаг 5.4:** Второй фильтр: реранкер через LiteLLM `/rerank` (`rerank_top_n`) — TODO
-- [ ] **Шаг 5.5:** Промпт через Jinja2-шаблон — TODO
-- [ ] **Шаг 5.6:** Генерация через LiteLLM (`chat-default`) — TODO
-- [ ] **Шаг 5.7:** Возврат ответа + использованных чанков — TODO
-- [ ] **Шаг 5.8:** Логирование запросов/ответов в stdout — TODO
-- [ ] **Шаг 5.9:** Debug-скрипт `rag_orchestrator/scripts/run_debug.sh`, unit + интеграционные тесты — TODO
+- [x] **Шаг 5.1:** Каркас gRPC-сервиса, `GenerateAnswer` + проверка инициализации данных (`FAILED_PRECONDITION`) — DONE 2026-08-04: `RagServicer`; init marker cache; `GetDataStatus`.
+- [x] **Шаг 5.2:** Эмбеддинг запроса через LiteLLM + валидация модели против манифеста коллекции — DONE 2026-08-04: `query:` prefix; `validate_manifest_at_startup`.
+- [x] **Шаг 5.3:** Первый фильтр: векторный поиск в Qdrant (`top_k`) — DONE 2026-08-04: `QdrantReader.search` (kind=chunk), default top_k=50.
+- [x] **Шаг 5.4:** Второй фильтр: реранкер через LiteLLM `/rerank` (`rerank_top_n`) — DONE 2026-08-04: `LiteLLMClient.rerank`, default top_n=5.
+- [x] **Шаг 5.5:** Промпт через Jinja2-шаблон — DONE 2026-08-04: inline Jinja2 + `---USER---` split.
+- [x] **Шаг 5.6:** Генерация через LiteLLM (`chat-default`) — DONE 2026-08-04: `/v1/chat/completions`.
+- [x] **Шаг 5.7:** Возврат ответа + использованных чанков — DONE 2026-08-04: `GenerateAnswerResponse.used_chunks`.
+- [x] **Шаг 5.8:** Логирование запросов/ответов в stdout — DONE 2026-08-04: pipeline logs query/candidates/answer.
+- [x] **Шаг 5.9:** Debug-скрипт + тесты — DONE 2026-08-04: `run_debug.sh`, `generate_answer.py`; unit + HTTP-mock pipeline; live GenerateAnswer.
 
 ## Этап 6: API Gateway — TODO
 

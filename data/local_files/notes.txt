@@ -1,3 +1,8 @@
 Plain text note about Polotsk.
 
 Rogvolod was a prince of Polotsk. The project ragvalod is named after him.
+
+Lab inventory (smoke-test fact, not public knowledge):
+The calibration crystal for rack B7 is named "Skrygalov-amber".
+Its serial is RGV-2026-B7-8814 and the storage shelf is Polotsk-North-3.
+Only the night operator "Miroslava" is allowed to move that crystal.
