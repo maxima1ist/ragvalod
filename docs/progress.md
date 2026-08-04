@@ -81,19 +81,15 @@
 - [x] **Шаг 6.3:** TLS / аутентификация по API-key — DONE 2026-08-04: `X-API-Key` / Bearer (`GATEWAY_API_KEY`); TLS — на reverse proxy / K8s Ingress (локальный compose остаётся HTTP)
 - [x] **Шаг 6.4:** Сквозная проверка: ингест → генерация через REST; рестарт с сохранением инициализации; тесты — DONE 2026-08-04: `gateway/scripts/e2e_rest.py` + unit tests
 
-> ### 🛑 ЧЕКПОИНТ 3 — после этапа 6 (главный) — [ ] TODO
+> ### 🛑 ЧЕКПОИНТ 3 — после этапа 6 (главный) — [x] DONE 2026-08-04
 >
-> Пользователь валидирует качество системы end-to-end — единственное, что агент оценить не может:
-> - прогоняет руками сценарий шага 6.4 через REST Gateway (409 до ингеста → ингест → генерация → рестарт с сохранением инициализации);
-> - кладёт в тестовую директорию **свои реальные заметки** и задаёт вопросы с известными ему ответами — оценивает качество retrieval и ответов, разумность нарезки чанков на его документах.
->
-> Пользователь предоставляет для этапа 7: Notion integration token с доступом к тестовым страницам.
+> Пользователь валидировал e2e через Gateway (Skrygalov-amber / Markus); Notion token (`NOTION_ACCESS_KEY`) проверен, страница Work (+ дерево) доступна integration `ragvalod-dev`.
 
-## Этап 7: Адаптер Notion — TODO
+## Этап 7: Адаптер Notion — DONE
 
-- [ ] **Шаг 7.1:** `NotionDataSource` — обёртка над ридером `llama-index-readers-notion` — TODO
-- [ ] **Шаг 7.2:** Регистрация в фабрике, токен per-request через `/ingest` — TODO
-- [ ] **Шаг 7.3:** Ингест тестовой выборки из Notion, проверка инкрементального upsert — TODO
+- [x] **Шаг 7.1:** `NotionDataSource` — обёртка над ридером `llama-index-readers-notion` — DONE 2026-08-04: `MarkdownNotionPageReader` (heading_1/2/3 → `#`, child pages не flatten)
+- [x] **Шаг 7.2:** Регистрация в фабрике, токен per-request через `/ingest` — DONE 2026-08-04: credentials `integration_token`/`access_key`; options `page_ids`/`query`/`max_pages`
+- [x] **Шаг 7.3:** Ингест тестовой выборки из Notion, проверка инкрементального upsert — DONE 2026-08-04: query=RAG → 1 doc / 10 chunks; повтор 1/10; generate по Notion chunk score~0.93
 
 > ### 🛑 ЧЕКПОИНТ 4 — после этапа 7 — [ ] TODO
 >

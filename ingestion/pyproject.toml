@@ -12,6 +12,7 @@ dependencies = [
     "qdrant-client>=1.14.0,<1.15.0",
     "llama-index-core>=0.12.0",
     "llama-index-readers-file>=0.4.0",
+    "llama-index-readers-notion>=0.3.0",
     "ragvalod-proto",
 ]
 

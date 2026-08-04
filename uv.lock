@@ -1006,6 +1006,18 @@ wheels = [
 ]
 
 [[package]]
+name = "llama-index-readers-notion"
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "llama-index-core" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3a/d1/3a6b01499b7927e1e7fdaf55848c318b67ff503cef41f79c1b8f6f7c6884/llama_index_readers_notion-0.5.0.tar.gz", hash = "sha256:612a9a12a6104781d83e6014c1f1bbe8ea2236bd3ef8fb3f4e7b0e0602e06a0d", size = 5765, upload-time = "2026-03-12T20:36:46.092Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/40/51/b3710b13d875f4b2796c6547bfdb69a562bf203a976154c16b206ccc5527/llama_index_readers_notion-0.5.0-py3-none-any.whl", hash = "sha256:9a571325494b63a2e9f0b2bcebe869d40fe4eac54b6060592aa50ef8d71ed141", size = 5386, upload-time = "2026-03-12T20:36:45.418Z" },
+]
+
+[[package]]
 name = "llama-index-workflows"
 version = "2.22.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2097,6 +2109,7 @@ dependencies = [
     { name = "httpx" },
     { name = "llama-index-core" },
     { name = "llama-index-readers-file" },
+    { name = "llama-index-readers-notion" },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
     { name = "qdrant-client" },
@@ -2110,6 +2123,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28.0" },
     { name = "llama-index-core", specifier = ">=0.12.0" },
     { name = "llama-index-readers-file", specifier = ">=0.4.0" },
+    { name = "llama-index-readers-notion", specifier = ">=0.3.0" },
     { name = "pydantic-settings", specifier = ">=2.7.0" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "qdrant-client", specifier = ">=1.14.0,<1.15.0" },
