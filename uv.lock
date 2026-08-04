@@ -2065,6 +2065,7 @@ source = { editable = "gateway" }
 dependencies = [
     { name = "fastapi" },
     { name = "grpcio" },
+    { name = "grpcio-health-checking" },
     { name = "httpx" },
     { name = "httpx2" },
     { name = "pydantic-settings" },
@@ -2077,6 +2078,7 @@ dependencies = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "grpcio", specifier = ">=1.70.0" },
+    { name = "grpcio-health-checking", specifier = ">=1.70.0" },
     { name = "httpx", specifier = ">=0.28.0" },
     { name = "httpx2", specifier = ">=2.0.0" },
     { name = "pydantic-settings", specifier = ">=2.7.0" },

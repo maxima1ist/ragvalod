@@ -28,6 +28,7 @@ services:
     environment:
       GATEWAY_HOST: "0.0.0.0"
       GATEWAY_PORT: "8000"
+      GATEWAY_API_KEY: ${GATEWAY_API_KEY:-change-me}
       GATEWAY_INGESTION_GRPC_ADDR: "ingestion:50051"
       GATEWAY_RAG_GRPC_ADDR: "rag_orchestrator:50052"
       GATEWAY_LITELLM_BASE_URL: "http://litellm:4000"

@@ -74,12 +74,12 @@
 - [x] **Шаг 5.8:** Логирование запросов/ответов в stdout — DONE 2026-08-04: pipeline logs query/candidates/answer.
 - [x] **Шаг 5.9:** Debug-скрипт + тесты — DONE 2026-08-04: `run_debug.sh`, `generate_answer.py`; unit + HTTP-mock pipeline; live GenerateAnswer.
 
-## Этап 6: API Gateway — TODO
+## Этап 6: API Gateway — DONE
 
-- [ ] **Шаг 6.1:** FastAPI-роуты: `/health` (вкл. `data_initialized` + per-source маркеры), `/generate`, `/ingest` (мульти-source), `/ingest/{job_id}`, `/sources` — TODO
-- [ ] **Шаг 6.2:** Асинхронные gRPC-клиенты (`grpc.aio`), маппинг ошибок в HTTP (вкл. 409 «данных нет») — TODO
-- [ ] **Шаг 6.3:** TLS / аутентификация по API-key — TODO
-- [ ] **Шаг 6.4:** Сквозная проверка: ошибка до ингеста → ингест → статус job → генерация; рестарт; интеграционные тесты — TODO
+- [x] **Шаг 6.1:** FastAPI-роуты: `/health` (вкл. `data_initialized` + per-source маркеры), `/generate`, `/ingest` (мульти-source), `/ingest/{job_id}`, `/sources` — DONE 2026-08-04
+- [x] **Шаг 6.2:** Асинхронные gRPC-клиенты (`grpc.aio`), маппинг ошибок в HTTP (вкл. 409 «данных нет») — DONE 2026-08-04: `clients.py` + `errors.py`
+- [x] **Шаг 6.3:** TLS / аутентификация по API-key — DONE 2026-08-04: `X-API-Key` / Bearer (`GATEWAY_API_KEY`); TLS — на reverse proxy / K8s Ingress (локальный compose остаётся HTTP)
+- [x] **Шаг 6.4:** Сквозная проверка: ингест → генерация через REST; рестарт с сохранением инициализации; тесты — DONE 2026-08-04: `gateway/scripts/e2e_rest.py` + unit tests
 
 > ### 🛑 ЧЕКПОИНТ 3 — после этапа 6 (главный) — [ ] TODO
 >

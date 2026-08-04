@@ -9,6 +9,7 @@ dependencies = [
     "httpx>=0.28.0",
     "httpx2>=2.0.0",
     "grpcio>=1.70.0",
+    "grpcio-health-checking>=1.70.0",
     "pydantic-settings>=2.7.0",
     "python-dotenv>=1.0.0",
     "ragvalod-proto",

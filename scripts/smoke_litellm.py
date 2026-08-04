@@ -51,9 +51,9 @@ def check_chat(client: httpx.Client) -> None:
     )
     response.raise_for_status()
     body = response.json()
-    content = body["choices"][0]["message"]["content"]
-    logger.info("chat response: %s", content[:200])
-    if not content:
+    content = body["choices"][0]["message"].get("content") or ""
+    logger.info("chat response: %s", content[:200] if content else "<empty>")
+    if not content.strip():
         raise RuntimeError("empty chat completion content")
 
 
