@@ -37,27 +37,22 @@
 - [x] **Шаг 2.1:** Поднять Qdrant, проверить UI (6333) и gRPC (6334) — DONE 2026-08-04: сервис `qdrant` (образ `qdrant/qdrant:v1.14.1`) в compose, порты 6333/6334, volume `qdrant_data`. Проверено: `/readyz` → ready, healthcheck healthy.
 - [x] **Шаг 2.2:** Smoke-скрипт в корневом `scripts/`: создание коллекции, запись/чтение векторов по gRPC — DONE 2026-08-04: `scripts/smoke_qdrant.py` (`prefer_grpc=True`) + интеграционный тест `scripts/test_smoke_qdrant.py`. Проверено: `make smoke-qdrant` / `uv run python scripts/smoke_qdrant.py` → OK; pytest 6 passed.
 
-> ### 🛑 ЧЕКПОИНТ 1 — после этапов 0–2 — [ ] TODO
+> ### 🛑 ЧЕКПОИНТ 1 — после этапов 0–2 — [x] DONE 2026-08-04
 >
-> Пользователь валидирует фундамент (менять его позже дороже всего):
-> - `docker compose up` поднимает каркасы, health-checks зелёные;
-> - smoke-скрипт Qdrant отрабатывает, веб-UI открывается на :6333;
-> - структура репозитория и тулинг устраивают.
->
-> Пользователь предоставляет для этапа 3: ключ внешнего LLM API (`OPENAI_API_KEY` или аналог) — без него smoke-проверка chat невозможна.
+> Пользователь валидировал: compose healthy, smoke Qdrant OK, lint/test зелёные, структура/тулинг ок.
+> Для этапа 3 предоставлен `OPENROUTER_API_KEY` в `.env` (проверен curl к `openrouter/free`).
 
-## Этап 3: Model Gateway (LiteLLM + Infinity) — TODO
+## Этап 3: Model Gateway (LiteLLM + Infinity) — DONE
 
-- [ ] **Шаг 3.1:** Сервис `litellm` в compose (DB-less, `configs/litellm.yaml`, алиасы chat/embedder/reranker) — TODO
-- [ ] **Шаг 3.2:** Сервис `infinity` в compose (эмбеддер + реранкер, CPU), маппинг алиасов — TODO
-- [ ] **Шаг 3.3:** Smoke-скрипт в корневом `scripts/`: chat, embeddings (батч), rerank через LiteLLM — TODO
+- [x] **Шаг 3.1:** Сервис `litellm` в compose (DB-less, `configs/litellm.yaml`, алиасы chat/embedder/reranker) — DONE 2026-08-04: `configs/litellm.yaml` — `chat-default` → OpenRouter (`openrouter/openrouter/free` + `OPENROUTER_API_KEY`), embed/rerank → Infinity; in-memory cache (`cache_params.type: local`). Образ `ghcr.io/berriai/litellm:main-stable`, порт 4000. Проверено: health healthy + smoke chat.
+- [x] **Шаг 3.2:** Сервис `infinity` в compose (эмбеддер + реранкер, CPU), маппинг алиасов — DONE 2026-08-04: образ `michaelf34/infinity:latest-cpu` (исправление имени из плана), модели e5-small + bge-reranker-v2-m3, `--engine torch` (optimum падает: у reranker нет ONNX). Volume `hf_cache`. Проверено: health healthy.
+- [x] **Шаг 3.3:** Smoke-скрипт в корневом `scripts/`: chat, embeddings (батч), rerank через LiteLLM — DONE 2026-08-04: `scripts/smoke_litellm.py` + `scripts/test_smoke_litellm.py`, `make smoke-litellm`. Проверено: chat→pong, embeddings batch dim=384, rerank OK; pytest 7 passed.
 
 > ### 🛑 ЧЕКПОИНТ 2 — после этапа 3 — [ ] TODO
 >
 > Пользователь валидирует (первый момент, когда система тратит его деньги):
 > - smoke-скрипт проходит chat через его API-ключ, расход по ключу выглядит адекватно;
 > - модели Infinity скачались, скорость эмбеддингов/rerank на его CPU приемлема.
-
 ## Этап 4: Ingestion Service (локальные файлы) — TODO
 
 - [ ] **Шаг 4.1:** Каркас gRPC-сервиса с job-моделью (несколько источников в одном job, per-source статусы) — TODO
