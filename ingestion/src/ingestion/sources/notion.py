@@ -5,14 +5,18 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime
 from typing import Any
 
 from llama_index.readers.notion import NotionPageReader
 
-from ingestion.sources.base import DataSource, SourceDocument
+from ingestion.sources.base import DataSource, ProgressCallback, SourceDocument
 
 logger = logging.getLogger("ingestion.sources.notion")
+_DEFAULT_CONCURRENCY = 3
+_MAX_CONCURRENCY = 8
 
 _PAGE_URL = "https://api.notion.com/v1/pages/{page_id}"
 _SEARCH_URL = "https://api.notion.com/v1/search"
@@ -54,6 +58,15 @@ def _parse_id_list(raw: str) -> list[str]:
         return []
     parts = re.split(r"[\s,;]+", raw.strip())
     return [p for p in parts if p]
+
+
+def _parse_concurrency(raw: str) -> int:
+    if not raw.strip():
+        return _DEFAULT_CONCURRENCY
+    value = int(raw.strip())
+    if value < 1:
+        raise ValueError("max_concurrency must be >= 1")
+    return min(value, _MAX_CONCURRENCY)
 
 
 def _page_title_from_properties(properties: dict[str, Any]) -> str:
@@ -209,6 +222,8 @@ class NotionDataSource(DataSource):
         self,
         credentials: dict[str, str],
         options: dict[str, str],
+        *,
+        progress: ProgressCallback | None = None,
     ) -> list[SourceDocument]:
         token = _extract_token(credentials)
         if not token:
@@ -216,9 +231,14 @@ class NotionDataSource(DataSource):
                 "notion requires credentials.integration_token "
                 "(aliases: token, notion_token, access_key)"
             )
-        return await asyncio.to_thread(self._fetch_sync, token, options)
+        return await asyncio.to_thread(self._fetch_sync, token, options, progress)
 
-    def _fetch_sync(self, token: str, options: dict[str, str]) -> list[SourceDocument]:
+    def _fetch_sync(
+        self,
+        token: str,
+        options: dict[str, str],
+        progress: ProgressCallback | None,
+    ) -> list[SourceDocument]:
         reader = MarkdownNotionPageReader(integration_token=token)
         page_ids = _parse_id_list(options.get("page_ids") or options.get("page_id") or "")
         database_ids = _parse_id_list(
@@ -235,6 +255,7 @@ class NotionDataSource(DataSource):
         else:
             max_pages = max(1, int(max_raw))
 
+        page_meta: dict[str, dict[str, str]] = {}
         if database_ids:
             for database_id in database_ids:
                 page_ids.extend(reader.query_database(database_id))
@@ -242,6 +263,7 @@ class NotionDataSource(DataSource):
         if not page_ids:
             discovered = reader.search_pages(query=query, max_pages=max_pages)
             page_ids = [p["id"] for p in discovered]
+            page_meta = {p["id"]: p for p in discovered}
             logger.info(
                 "notion discovered %s pages query=%r max_pages=%s",
                 len(page_ids),
@@ -262,21 +284,60 @@ class NotionDataSource(DataSource):
         if not page_ids:
             raise ValueError("notion: no pages to ingest (check Connections / page_ids)")
 
-        documents: list[SourceDocument] = []
-        for page_id in page_ids:
+        concurrency = _parse_concurrency(options.get("max_concurrency") or "")
+        total = len(page_ids)
+        logger.info(
+            "notion fetching %s pages with max_concurrency=%s",
+            total,
+            concurrency,
+        )
+
+        def load_one(page_id: str) -> SourceDocument:
             text = reader.read_page(page_id)
-            title, url, modified = reader.get_page_meta(page_id)
-            documents.append(
-                SourceDocument(
-                    doc_id=page_id,
-                    text=text or title,
-                    source=self.name,
-                    title=title,
-                    uri=url,
-                    modified_at=modified or datetime.now(UTC),
-                    content_type="markdown",
-                    metadata={"page_id": page_id, "url": url},
-                )
+            cached = page_meta.get(page_id)
+            if cached:
+                title = cached.get("title") or page_id
+                url = cached.get("url") or ""
+                modified = None
+            else:
+                title, url, modified = reader.get_page_meta(page_id)
+            return SourceDocument(
+                doc_id=page_id,
+                text=text or title,
+                source=self.name,
+                title=title,
+                uri=url,
+                modified_at=modified or datetime.now(UTC),
+                content_type="markdown",
+                metadata={"page_id": page_id, "url": url},
             )
+
+        documents_by_id: dict[str, SourceDocument] = {}
+        done = 0
+        progress_lock = threading.Lock()
+
+        with ThreadPoolExecutor(max_workers=concurrency) as pool:
+            futures = {pool.submit(load_one, page_id): page_id for page_id in page_ids}
+            for future in as_completed(futures):
+                page_id = futures[future]
+                try:
+                    document = future.result()
+                except Exception:
+                    logger.exception("notion fetch failed page_id=%s", page_id)
+                    raise
+                documents_by_id[document.doc_id] = document
+                with progress_lock:
+                    done += 1
+                    logger.info(
+                        "notion fetch %s/%s title=%r chars=%s",
+                        done,
+                        total,
+                        document.title,
+                        len(document.text or ""),
+                    )
+                    if progress is not None:
+                        progress(done, total, document.title)
+
+        documents = [documents_by_id[page_id] for page_id in page_ids]
         logger.info("notion loaded %s pages", len(documents))
         return documents

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from llama_index.core import SimpleDirectoryReader
 
-from ingestion.sources.base import DataSource, SourceDocument
+from ingestion.sources.base import DataSource, ProgressCallback, SourceDocument
 
 logger = logging.getLogger("ingestion.sources.local_files")
 
@@ -29,6 +29,8 @@ class LocalFilesDataSource(DataSource):
         self,
         credentials: dict[str, str],
         options: dict[str, str],
+        *,
+        progress: ProgressCallback | None = None,
     ) -> list[SourceDocument]:
         del credentials  # unused — adapter needs no secrets
         root = options.get("path") or options.get("dir") or self._default_dir
@@ -47,7 +49,8 @@ class LocalFilesDataSource(DataSource):
         # SimpleDirectoryReader is sync/blocking; fine for first-pass ingest jobs.
         documents = reader.load_data()
         result: list[SourceDocument] = []
-        for doc in documents:
+        total = len(documents)
+        for index, doc in enumerate(documents, start=1):
             file_path = str(doc.metadata.get("file_path") or doc.doc_id or "")
             suffix = Path(file_path).suffix.lower()
             content_type = "markdown" if suffix in _MARKDOWN_SUFFIXES else "text"
@@ -70,5 +73,7 @@ class LocalFilesDataSource(DataSource):
                     metadata=dict(doc.metadata),
                 )
             )
+            if progress is not None:
+                progress(index, total, title)
         logger.info("loaded %s documents from %s", len(result), root)
         return result

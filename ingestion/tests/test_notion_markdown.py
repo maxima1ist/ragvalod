@@ -1,6 +1,13 @@
 """Unit tests for Notion Markdown block formatting."""
 
-from ingestion.sources.notion import MarkdownNotionPageReader, _extract_token, _parse_id_list
+import pytest
+
+from ingestion.sources.notion import (
+    MarkdownNotionPageReader,
+    _extract_token,
+    _parse_concurrency,
+    _parse_id_list,
+)
 
 
 def test_extract_token_aliases() -> None:
@@ -12,6 +19,14 @@ def test_extract_token_aliases() -> None:
 def test_parse_id_list() -> None:
     assert _parse_id_list("a, b;c\nd") == ["a", "b", "c", "d"]
     assert _parse_id_list("") == []
+
+
+def test_parse_concurrency() -> None:
+    assert _parse_concurrency("") == 3
+    assert _parse_concurrency("5") == 5
+    assert _parse_concurrency("99") == 8
+    with pytest.raises(ValueError):
+        _parse_concurrency("0")
 
 
 def test_format_heading_and_list() -> None:

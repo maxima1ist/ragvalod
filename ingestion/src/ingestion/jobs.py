@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -115,14 +116,49 @@ class JobManager:
         for index, (adapter, credentials, options) in enumerate(work_items):
             status = record.sources[index]
             status.state = SourceJobState.RUNNING
+            status.message = "fetching"
             try:
-                docs = await adapter.fetch(credentials, options)
+                progress_lock = threading.Lock()
+
+                def on_progress(
+                    done: int,
+                    total: int,
+                    detail: str,
+                    *,
+                    _status: SourceJobStatus = status,
+                    _source: str = adapter.name,
+                    _lock: threading.Lock = progress_lock,
+                ) -> None:
+                    with _lock:
+                        _status.documents_processed = done
+                        _status.message = f"fetching {done}/{total}: {detail}"
+                        if done == 1 or done == total or done % 5 == 0:
+                            logger.info(
+                                "job %s source %s progress %s/%s %s",
+                                job_id,
+                                _source,
+                                done,
+                                total,
+                                detail,
+                            )
+
+                docs = await adapter.fetch(credentials, options, progress=on_progress)
+                status.message = f"chunking {len(docs)} docs"
+                logger.info("job %s source %s chunking docs=%s", job_id, adapter.name, len(docs))
                 chunks = chunk_documents(
                     docs,
                     chunk_size=self._settings.chunk_size,
                     chunk_overlap=self._settings.chunk_overlap,
                 )
+                status.message = f"embedding {len(chunks)} chunks"
+                logger.info(
+                    "job %s source %s embedding chunks=%s",
+                    job_id,
+                    adapter.name,
+                    len(chunks),
+                )
                 vectors = await self._embeddings.embed_texts([c.text for c in chunks])
+                status.message = f"upserting {len(chunks)} chunks"
                 written = await self._store.upsert_chunks(chunks, vectors)
                 await self._store.write_source_marker(adapter.name, document_count=len(docs))
                 status.state = SourceJobState.SUCCEEDED

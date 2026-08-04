@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
+
+# done, total, detail (e.g. page title)
+ProgressCallback = Callable[[int, int, str], None]
 
 
 @dataclass(slots=True)
@@ -34,5 +38,7 @@ class DataSource(ABC):
         self,
         credentials: dict[str, str],
         options: dict[str, str],
+        *,
+        progress: ProgressCallback | None = None,
     ) -> list[SourceDocument]:
         """Fetch documents. Credentials live only for the duration of the job."""
