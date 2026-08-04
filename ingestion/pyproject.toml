@@ -8,6 +8,10 @@ dependencies = [
     "grpcio-health-checking>=1.70.0",
     "pydantic-settings>=2.7.0",
     "python-dotenv>=1.0.0",
+    "httpx>=0.28.0",
+    "qdrant-client>=1.14.0,<1.15.0",
+    "llama-index-core>=0.12.0",
+    "llama-index-readers-file>=0.4.0",
     "ragvalod-proto",
 ]
 

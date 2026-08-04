@@ -48,20 +48,19 @@
 - [x] **Шаг 3.2:** Сервис `infinity` в compose (эмбеддер + реранкер, CPU), маппинг алиасов — DONE 2026-08-04: образ `michaelf34/infinity:latest-cpu` (исправление имени из плана), модели e5-small + bge-reranker-v2-m3, `--engine torch` (optimum падает: у reranker нет ONNX). Volume `hf_cache`. Проверено: health healthy.
 - [x] **Шаг 3.3:** Smoke-скрипт в корневом `scripts/`: chat, embeddings (батч), rerank через LiteLLM — DONE 2026-08-04: `scripts/smoke_litellm.py` + `scripts/test_smoke_litellm.py`, `make smoke-litellm`. Проверено: chat→pong, embeddings batch dim=384, rerank OK; pytest 7 passed.
 
-> ### 🛑 ЧЕКПОИНТ 2 — после этапа 3 — [ ] TODO
+> ### 🛑 ЧЕКПОИНТ 2 — после этапа 3 — [x] DONE 2026-08-04
 >
-> Пользователь валидирует (первый момент, когда система тратит его деньги):
-> - smoke-скрипт проходит chat через его API-ключ, расход по ключу выглядит адекватно;
-> - модели Infinity скачались, скорость эмбеддингов/rerank на его CPU приемлема.
-## Этап 4: Ingestion Service (локальные файлы) — TODO
+> Пользователь подтвердил: smoke LiteLLM/Infinity ок, OpenRouter chat работает, скорость приемлема.
 
-- [ ] **Шаг 4.1:** Каркас gRPC-сервиса с job-моделью (несколько источников в одном job, per-source статусы) — TODO
-- [ ] **Шаг 4.2:** Абстракция `DataSource` + фабрика адаптеров — TODO
-- [ ] **Шаг 4.3:** Адаптер локальных файлов на `SimpleDirectoryReader` (.txt, .md, .pdf, .docx) — TODO
-- [ ] **Шаг 4.4:** Пайплайн: structure-aware чанкинг (`MarkdownNodeParser` → `SentenceSplitter`, контекстуализация заголовками) + эмбеддинги через LiteLLM (батчами, префиксы модели) — TODO
-- [ ] **Шаг 4.5:** Запись в Qdrant, `upsert` по детерминированным ID; манифест модели при создании коллекции + сверка перед записью; per-source маркеры + write-once маркер инициализации по полностью успешному job — TODO
-- [ ] **Шаг 4.6:** Приём кредов через `TriggerIngest` (в памяти на время задачи) — TODO
-- [ ] **Шаг 4.7:** Debug-скрипт `ingestion/scripts/run_debug.sh`, unit + интеграционные тесты — TODO
+## Этап 4: Ingestion Service (локальные файлы) — DONE
+
+- [x] **Шаг 4.1:** Каркас gRPC-сервиса с job-моделью (несколько источников в одном job, per-source статусы) — DONE 2026-08-04: `ingestion/jobs.py` + `TriggerIngest`/`GetJobStatus`; asyncio-задача, статус в памяти.
+- [x] **Шаг 4.2:** Абстракция `DataSource` + фабрика адаптеров — DONE 2026-08-04: `sources/base.py`, `sources/factory.py`; unit-тесты фабрики.
+- [x] **Шаг 4.3:** Адаптер локальных файлов на `SimpleDirectoryReader` (.txt, .md, .pdf, .docx) — DONE 2026-08-04: `sources/local_files.py`; sample `data/local_files/`; volume mount в compose.
+- [x] **Шаг 4.4:** Пайплайн: structure-aware чанкинг + эмбеддинги через LiteLLM — DONE 2026-08-04: `pipeline/chunking.py` (MarkdownNodeParser → SentenceSplitter + contextualize, без NLTK), `pipeline/embeddings.py` (батчи, `passage:`).
+- [x] **Шаг 4.5:** Запись в Qdrant + манифест/маркеры — DONE 2026-08-04: `qdrant_store.py` — upsert по uuid5, manifest, per-source + write-once init marker.
+- [x] **Шаг 4.6:** Приём кредов через `TriggerIngest` — DONE 2026-08-04: credentials в SourceSpec, только в памяти, `clear()` после источника.
+- [x] **Шаг 4.7:** Debug-скрипт + тесты — DONE 2026-08-04: `ingestion/scripts/run_debug.sh`, `trigger_ingest.py`; unit + live ingest → SUCCEEDED, 5 chunks. pytest 13 passed.
 
 ## Этап 5: RAG Orchestrator — TODO
 
