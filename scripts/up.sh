@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Bring up the full base stack (Qdrant + service skeletons).
-# LiteLLM / Infinity: docker compose --profile models up -d  (stage 3)
+# Bring up the full base stack (Qdrant + services + LiteLLM + Infinity).
+# Optional: docker compose --profile local-llm up -d
+# Optional: docker compose --profile monitoring up -d
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"

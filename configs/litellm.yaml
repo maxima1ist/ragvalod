@@ -1,18 +1,26 @@
-# Stub LiteLLM config for compose bring-up (full aliases wired in stage 3).
-# DB-less mode: no DATABASE_URL.
+# LiteLLM Proxy — DB-less (no DATABASE_URL).
+# Consumers call aliases; backends swap here without code changes.
 model_list:
   - model_name: chat-default
     litellm_params:
-      model: openai/gpt-4o-mini
-      api_key: os.environ/OPENAI_API_KEY
+      # OpenRouter free router (validated 2026-08-04). Override via env if needed.
+      model: openrouter/openrouter/free
+      api_key: os.environ/OPENROUTER_API_KEY
   - model_name: embedder-default
     litellm_params:
       model: openai/intfloat/multilingual-e5-small
       api_base: http://infinity:7997
+      api_key: "none"
   - model_name: reranker-default
     litellm_params:
       model: infinity/BAAI/bge-reranker-v2-m3
       api_base: http://infinity:7997
+      api_key: "none"
+
+litellm_settings:
+  cache: true
+  cache_params:
+    type: local
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY

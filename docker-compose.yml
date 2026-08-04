@@ -113,21 +113,26 @@ services:
       retries: 10
       start_period: 10s
 
-  # Full wiring + smoke in stage 3. Included here so compose topology matches the plan.
+  # LiteLLM + Infinity — base stack from stage 3 (were under profile `models` during 0–2).
   litellm:
     image: ghcr.io/berriai/litellm:main-stable
     ports:
       - "4000:4000"
     volumes:
       - ./configs/litellm.yaml:/app/config.yaml:ro
+    env_file:
+      - path: .env
+        required: false
     environment:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-ragvalod-local}
     command: ["--config", "/app/config.yaml", "--port", "4000", "--host", "0.0.0.0"]
+    depends_on:
+      infinity:
+        condition: service_healthy
     networks:
       - ragvalod
-    profiles:
-      - models
     healthcheck:
       test:
         [
@@ -136,12 +141,11 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 20s
+      retries: 12
+      start_period: 30s
 
-  # Model download is heavy; activate with --profile models (stage 3).
   infinity:
-    image: michaelfeil/infinity:latest
+    image: michaelf34/infinity:latest-cpu
     ports:
       - "7997:7997"
     volumes:
@@ -151,6 +155,8 @@ services:
     command:
       [
         "v2",
+        "--engine",
+        "torch",
         "--model-id",
         "intfloat/multilingual-e5-small",
         "--model-id",
@@ -160,8 +166,6 @@ services:
       ]
     networks:
       - ragvalod
-    profiles:
-      - models
     healthcheck:
       test:
         [
@@ -170,8 +174,8 @@ services:
         ]
       interval: 15s
       timeout: 10s
-      retries: 20
-      start_period: 120s
+      retries: 40
+      start_period: 600s
 
   # Stage 8 — requires NVIDIA Container Toolkit.
   vllm:

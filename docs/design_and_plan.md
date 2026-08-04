@@ -110,7 +110,7 @@ model_list:
 Self-hosted модели — отдельные inference-контейнеры, жизненным циклом которых управляют compose-профили (LiteLLM их не поднимает, только проксирует к ним):
 
 - **vLLM** (официальный образ `vllm/vllm-openai`) — LLM; тяжёлый, GPU, поднимается только под профилем `local-llm`. Без профиля LLM-алиас указывает на внешний API. Выбран среди альтернатив (SGLang, TRT-LLM, Ollama / llama.cpp, TGI): индустриальный дефолт с крупнейшей экосистемой и поддержкой моделей «с первого дня релиза», нативный OpenAI-совместимый сервер, квантизация AWQ/GPTQ из коробки (7B в 4-bit укладывается в 8 ГБ VRAM тестового стенда), путь масштабирования до мульти-GPU (tensor parallelism). SGLang сопоставим по производительности и остаётся кандидатом на замену; TRT-LLM даёт максимум на NVIDIA, но требует компиляции движков под конкретную GPU; Ollama/llama.cpp удобны для десктопа, но слабее под конкурентной нагрузкой (батчинг, throughput) и это не production-паттерн; TGI уступает vLLM по покрытию моделей и фичам.
-- **Infinity** (`michaelfeil/infinity`) — эмбеддер и реранкер; умеет несколько моделей в одном контейнере, работает на CPU, лёгкий — входит в базовый состав compose (нужен для ингеста с первого дня). Выбран среди альтернатив (HF TEI, sentence-transformers внутри сервисов, vLLM, Ollama): единственный закрывает **и embeddings, и rerank в одном CPU-контейнере** с API, которое LiteLLM понимает нативно (провайдер `infinity/`). TEI (Rust) быстрее, но хостит одну модель на инстанс — эмбеддер + реранкер потребовали бы двух контейнеров; sentence-transformers в сервисах затащил бы torch в их образы; vLLM для эмбеддингов — GPU-overkill; Ollama не умеет rerank. При желании эмбеддинги/реранк также переключаются на внешние API (OpenAI, Cohere, Jina) правкой конфига.
+- **Infinity** (`michaelf34/infinity`, CPU-тег `latest-cpu`) — эмбеддер и реранкер; умеет несколько моделей в одном контейнере, работает на CPU, лёгкий — входит в базовый состав compose (нужен для ингеста с первого дня). (2026-08-04: в черновике плана ошибочно фигурировал `michaelfeil/infinity` — корректный Docker Hub namespace `michaelf34`.) Выбран среди альтернатив (HF TEI, sentence-transformers внутри сервисов, vLLM, Ollama): единственный закрывает **и embeddings, и rerank в одном CPU-контейнере** с API, которое LiteLLM понимает нативно (провайдер `infinity/`). TEI (Rust) быстрее, но хостит одну модель на инстанс — эмбеддер + реранкер потребовали бы двух контейнеров; sentence-transformers в сервисах затащил бы torch в их образы; vLLM для эмбеддингов — GPU-overkill; Ollama не умеет rerank. При желании эмбеддинги/реранк также переключаются на внешние API (OpenAI, Cohere, Jina) правкой конфига.
 
 Такой дизайн решает проблему «тяжёлой библиотеки, когда она не нужна» (в сервисах нет torch/CUDA), и упрощает замену движка (SGLang, TRT-LLM — или TEI для эмбеддингов) в будущем.
 
@@ -201,7 +201,7 @@ ragvalod/
 
 LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные компоненты на готовых образах: у них нет модулей в репозитории, только конфигурация в compose/`configs/`.
 
-**Шаг 0.3:** docker-compose.yml с сервисами `gateway`, `ingestion`, `rag_orchestrator`, `litellm`, `infinity`, `qdrant`; профили: `local-llm` (vLLM), `monitoring` (Langfuse), `models` (LiteLLM + Infinity — добавлено 2026-08-04: вынесены из базового подъёма, чтобы `docker compose up` на этапах 0–2 не тянул тяжёлые модели до этапа 3). Сети, volumes (данные Qdrant, кэш HuggingFace), переменные окружения.
+**Шаг 0.3:** docker-compose.yml с сервисами `gateway`, `ingestion`, `rag_orchestrator`, `litellm`, `infinity`, `qdrant`; профили: `local-llm` (vLLM), `monitoring` (Langfuse). (2026-08-04: на этапах 0–2 `litellm`/`infinity` временно были под профилем `models`, чтобы не тянуть веса до этапа 3; с этапа 3 снова в базовом составе.) Сети, volumes (данные Qdrant, кэш HuggingFace), переменные окружения.
 
 **Шаг 0.4:** Настроить общий тулинг: генерация gRPC-кода из `proto/` (makefile/скрипт), линтеры, pytest, каркасы debug-скриптов.
 
@@ -231,7 +231,7 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 
 Идёт до Ingestion Service, потому что ингест зависит от эмбеддингов через LiteLLM.
 
-**Шаг 3.1:** Сервис `litellm` в compose (DB-less режим — без Postgres и `DATABASE_URL`, см. раздел 2.2; конфиг `configs/litellm.yaml`): алиасы `chat-default` (первый бекенд — внешний OpenAI-совместимый API), `embedder-default`, `reranker-default`. Ключи внешних API — через переменные окружения.
+**Шаг 3.1:** Сервис `litellm` в compose (DB-less режим — без Postgres и `DATABASE_URL`, см. раздел 2.2; конфиг `configs/litellm.yaml`): алиасы `chat-default` (первый бекенд — внешний OpenAI-совместимый API; 2026-08-04: OpenRouter через `OPENROUTER_API_KEY`, модель `openrouter/free`), `embedder-default`, `reranker-default`. Ключи внешних API — через переменные окружения.
 
 **Шаг 3.2:** Сервис `infinity` в compose (CPU): эмбеддер `intfloat/multilingual-e5-small` и реранкер `BAAI/bge-reranker-v2-m3` в одном контейнере; маппинг алиасов `embedder-default`/`reranker-default` на него в конфиге LiteLLM. Volume под кэш HuggingFace.
 

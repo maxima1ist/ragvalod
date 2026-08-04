@@ -10,4 +10,4 @@ else
   DOCKER=(sudo docker)
 fi
 
-"${DOCKER[@]}" compose --profile models --profile local-llm --profile monitoring down "$@"
+"${DOCKER[@]}" compose --profile local-llm --profile monitoring down "$@"
