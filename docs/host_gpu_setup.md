@@ -59,6 +59,7 @@
 | Хост `nvidia-smi` падает, `/dev/nvidia*` нет | `nvidia-modprobe`, перезагрузка, проверка PRIME/драйвера |
 | OOM в vLLM на 8 ГБ | AWQ/GPTQ 7B, снизить `MAX_MODEL_LEN` (4096→2048), `VLLM_GPU_MEMORY_UTILIZATION` (0.9→0.8) |
 | После reboot снова нет `/dev/nvidia*` | Повторить `nvidia-modprobe` или включить persistenced / проверить, что DKMS-модуль собрался под текущее ядро |
+| vLLM/HF: DNS error / Xet retries при скачивании весов | В compose уже `HF_HUB_DISABLE_XET=1`; либо предзагрузить модель в volume `hf_cache` (`hf download` / `snapshot_download`) |
 
 ## Связь с планом
 

@@ -318,10 +318,10 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 
 **Шаг 8.2:** Добавить в compose сервис `vllm` (образ `vllm/vllm-openai`) под профилем `local-llm`:
 ```
---model TheBloke/Mistral-7B-Instruct-v0.2-AWQ --quantization awq --dtype auto
+--model TheBloke/Mistral-7B-Instruct-v0.2-AWQ --quantization awq_marlin --dtype auto
 --max-model-len 4096 --enforce-eager --gpu-memory-utilization 0.85
 ```
-Примонтировать кэш HuggingFace. Без профиля образ не тянется и контейнер не поднимается. На ноутбуках с shared VRAM `gpu-memory-utilization` держать ≤0.85.
+Примонтировать кэш HuggingFace. Без профиля образ не тянется и контейнер не поднимается. На ноутбуках с shared VRAM `gpu-memory-utilization` держать ≤0.85. Для скачивания весов в контейнере задать `HF_HUB_DISABLE_XET=1` (иначе частые DNS-ошибки HF Xet).
 
 **Шаг 8.3:** Перевести алиас `chat-default` в `configs/litellm.yaml` на vLLM-бекенд (`hosted_vllm/<model>`, `api_base: http://vllm:8000/v1`). Кода не требуется — переключение одной записью конфига, без изменений в остальных сервисах.
 

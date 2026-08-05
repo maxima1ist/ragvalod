@@ -215,15 +215,16 @@ services:
     environment:
       HUGGING_FACE_HUB_TOKEN: ${HUGGING_FACE_HUB_TOKEN:-}
       HF_HOME: /root/.cache/huggingface
+      # HF Xet CDN often fails DNS inside containers; classic hub download is reliable.
+      HF_HUB_DISABLE_XET: "1"
       # Keep below 1.0 on laptops sharing VRAM with the display.
-      VLLM_ATTENTION_BACKEND: ${VLLM_ATTENTION_BACKEND:-}
     volumes:
       - hf_cache:/root/.cache/huggingface
     command:
       - "--model"
       - "${MODEL_NAME:-TheBloke/Mistral-7B-Instruct-v0.2-AWQ}"
       - "--quantization"
-      - "${VLLM_QUANTIZATION:-awq}"
+      - "${VLLM_QUANTIZATION:-awq_marlin}"
       - "--dtype"
       - "auto"
       - "--max-model-len"
