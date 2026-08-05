@@ -14,6 +14,7 @@ from gateway.auth import require_api_key
 from gateway.clients import IngestionClient, RagClient, check_grpc_health
 from gateway.config import Settings
 from gateway.errors import http_exception_handler, raise_from_grpc
+from gateway.langfuse_client import LangfuseStatsClient
 from gateway.schemas import (
     GenerateRequest,
     GenerateResponse,
@@ -37,6 +38,11 @@ app.add_exception_handler(HTTPException, http_exception_handler)
 
 ingestion = IngestionClient(settings.ingestion_grpc_addr)
 rag = RagClient(settings.rag_grpc_addr)
+langfuse_stats = LangfuseStatsClient(
+    host=settings.langfuse_host,
+    public_key=settings.langfuse_public_key,
+    secret_key=settings.langfuse_secret_key,
+)
 
 
 @app.get("/health")
@@ -124,6 +130,12 @@ async def generate(body: GenerateRequest) -> GenerateResponse:
         answer=result["answer"],
         used_chunks=[UsedChunk(**c) for c in result["used_chunks"]],
     )
+
+
+@app.get("/stats", dependencies=[Depends(require_api_key)])
+async def stats() -> dict:
+    """Aggregated Langfuse trace/score stats (HTTP; Langfuse has no gRPC)."""
+    return await langfuse_stats.fetch_stats()
 
 
 async def _check_litellm(base_url: str) -> bool:

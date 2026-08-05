@@ -108,12 +108,19 @@
 >
 > Пользователь подтвердил: локальный цикл ок (без OOM), `Qwen/Qwen2.5-7B-Instruct-AWQ` устраивает по русскому/качеству — оставляем основным `chat-default` (vLLM / `local-llm`).
 
-## Этап 9: Мониторинг и оценка (Langfuse + Judge) — TODO
+## Этап 9: Мониторинг и оценка (Langfuse + Judge) — DONE
 
-- [ ] **Шаг 9.1:** Langfuse под профилем `monitoring`, трассировка из RAG Orchestrator — TODO
-- [ ] **Шаг 9.2:** Judge: встроенные LLM-as-a-judge эвалюаторы Langfuse + метрики Ragas (конфигурация, не код) — TODO
-- [ ] **Шаг 9.3:** Персистентное хранение отладочных данных запросов — TODO
-- [ ] **Шаг 9.4:** Эндпоинт агрегированной статистики в Gateway (опционально) — TODO
+- [x] **Шаг 9.1:** Langfuse под профилем `monitoring`, трассировка из RAG Orchestrator — DONE 2026-08-05: `langfuse` + `langfuse-db` (Postgres 17) под `monitoring`; SDK `langfuse<3` в RAG; `tracing.py` + spans embed/search/rerank/prompt/chat. Seed keys через `LANGFUSE_INIT_*`. `make up-monitoring` / `make smoke-langfuse`. Проверено: health OK, `rag.generate` в UI/API.
+- [x] **Шаг 9.2:** Judge: встроенные LLM-as-a-judge эвалюаторы Langfuse + метрики Ragas (конфигурация, не код) — DONE 2026-08-05: `configs/langfuse_judge.yaml` — faithfulness / answer_relevancy / context_precision, маппинг `query`/`answer`/`used_chunks`, judge LLM → LiteLLM `chat-default`. Настройка эвалюаторов в UI Langfuse (не самописный код).
+- [x] **Шаг 9.3:** Персистентное хранение отладочных данных запросов — DONE 2026-08-05: Langfuse Postgres volume; в трейсе — query, used_chunks, system/user prompts (span `prompt`), answer. Проверено: trace `rag.generate` с 5 observations + metadata.chunk_ids.
+- [x] **Шаг 9.4:** Эндпоинт агрегированной статистики в Gateway (опционально) — DONE 2026-08-05: `GET /stats` (API-key) → Langfuse HTTP traces/scores; без ключей `enabled: false`. Unit + live `/stats` с recent `rag.generate`.
+
+> ### 🛑 ЧЕКПОИНТ 6 — после этапа 9 — [ ] TODO
+>
+> Пользователь валидирует в UI http://localhost:3000 (логин `admin@ragvalod.local` / `ragvalod-admin` по умолчанию):
+> 1. Трейсы `rag.generate` видны (query, чанки, промпты, ответ).
+> 2. Judge: в Langfuse UI настроены эвалюаторы по `configs/langfuse_judge.yaml` (Ragas: faithfulness, answer_relevancy, context_precision) с LLM connection на LiteLLM; scores появляются на трейсах.
+> После подтверждения — можно этап 10. Не начинать этап 10 без явного OK.
 
 ## Этап 10: Расширение источников и автоматизация ингеста — TODO
 

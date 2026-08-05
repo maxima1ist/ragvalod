@@ -12,6 +12,7 @@ dependencies = [
     "jinja2>=3.1.0",
     "qdrant-client>=1.14.0,<1.15.0",
     "ragvalod-proto",
+    "langfuse>=2.60.0,<3",
 ]
 
 [project.scripts]

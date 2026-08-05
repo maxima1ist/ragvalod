@@ -32,6 +32,10 @@ services:
       GATEWAY_INGESTION_GRPC_ADDR: "ingestion:50051"
       GATEWAY_RAG_GRPC_ADDR: "rag_orchestrator:50052"
       GATEWAY_LITELLM_BASE_URL: "http://litellm:4000"
+      # Langfuse stats (profile `monitoring`); empty keys → /stats reports disabled.
+      GATEWAY_LANGFUSE_HOST: ${LANGFUSE_HOST:-http://langfuse:3000}
+      GATEWAY_LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      GATEWAY_LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
     depends_on:
       ingestion:
         condition: service_healthy
@@ -115,6 +119,10 @@ services:
       RAG_EMBEDDING_QUERY_PREFIX: "query: "
       RAG_RERANKER_MODEL_ALIAS: "reranker-default"
       RAG_CHAT_MODEL_ALIAS: "chat-default"
+      # Langfuse (profile `monitoring`); empty keys → tracing no-op.
+      RAG_LANGFUSE_HOST: ${LANGFUSE_HOST:-http://langfuse:3000}
+      RAG_LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      RAG_LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
     depends_on:
       qdrant:
         condition: service_healthy
@@ -251,7 +259,30 @@ services:
       retries: 40
       start_period: 600s
 
-  # Stage 9 — monitoring profile.
+  # Stage 9 — monitoring profile (Langfuse v2 + Postgres; no ClickHouse).
+  langfuse-db:
+    image: postgres:17
+    profiles:
+      - monitoring
+    environment:
+      POSTGRES_USER: ${LANGFUSE_POSTGRES_USER:-langfuse}
+      POSTGRES_PASSWORD: ${LANGFUSE_POSTGRES_PASSWORD:-langfuse}
+      POSTGRES_DB: ${LANGFUSE_POSTGRES_DB:-langfuse}
+    volumes:
+      - langfuse_pg_data:/var/lib/postgresql/data
+    networks:
+      - ragvalod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+
   langfuse:
     image: langfuse/langfuse:2
     profiles:
@@ -259,12 +290,37 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: ${LANGFUSE_DATABASE_URL:-}
-      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-change-me}
-      SALT: ${LANGFUSE_SALT:-change-me}
-      NEXTAUTH_URL: http://localhost:3000
+      DATABASE_URL: postgresql://${LANGFUSE_POSTGRES_USER:-langfuse}:${LANGFUSE_POSTGRES_PASSWORD:-langfuse}@langfuse-db:5432/${LANGFUSE_POSTGRES_DB:-langfuse}
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-ragvalod-nextauth-dev-secret}
+      SALT: ${LANGFUSE_SALT:-ragvalod-salt-dev}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+      NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL:-http://localhost:3000}
+      TELEMETRY_ENABLED: "false"
+      # Seed org/project/API keys on first boot (local-dev defaults).
+      LANGFUSE_INIT_ORG_ID: ${LANGFUSE_INIT_ORG_ID:-ragvalod-org}
+      LANGFUSE_INIT_ORG_NAME: ${LANGFUSE_INIT_ORG_NAME:-ragvalod}
+      LANGFUSE_INIT_PROJECT_ID: ${LANGFUSE_INIT_PROJECT_ID:-ragvalod}
+      LANGFUSE_INIT_PROJECT_NAME: ${LANGFUSE_INIT_PROJECT_NAME:-ragvalod}
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-ragvalod-local}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-ragvalod-local}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:-admin@ragvalod.local}
+      LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME:-admin}
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-ragvalod-admin}
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
     networks:
       - ragvalod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://$$(hostname -i):3000/api/public/health | grep -q '\"status\":\"OK\"'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
 
 networks:
   ragvalod:
@@ -273,3 +329,4 @@ networks:
 volumes:
   qdrant_data:
   hf_cache:
+  langfuse_pg_data:

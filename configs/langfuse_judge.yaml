@@ -1,0 +1,65 @@
+# Langfuse LLM-as-a-judge evaluators for ragvalod (stage 9.2).
+#
+# No custom judge code: configure these in the Langfuse UI (Evaluators) or via
+# Langfuse's managed catalog (Ragas partnership). Point the Langfuse LLM
+# connection at LiteLLM so the judge uses the same model gateway as RAG:
+#
+#   base_url: http://litellm:4000/v1   (from Langfuse container network)
+#   api_key:  $LITELLM_MASTER_KEY
+#   model:    chat-default
+#
+# Trace field mapping (what RAG Orchestrator writes):
+#   {{input}}   ← trace.input.query
+#   {{output}}  ← trace.output.answer
+#   {{context}} ← trace.metadata.used_chunks[].text (join)
+#
+# Bring up: docker compose --profile monitoring up -d
+# UI:       http://localhost:3000  (admin@ragvalod.local / ragvalod-admin by default)
+
+version: 1
+
+judge_llm:
+  provider: litellm
+  api_base: http://litellm:4000/v1
+  model: chat-default
+  # Use LITELLM_MASTER_KEY from .env as the OpenAI-compatible key in Langfuse.
+
+variable_mapping:
+  input: trace.input.query
+  output: trace.output.answer
+  context: trace.metadata.used_chunks
+
+# Ragas-aligned metrics without ground truth (run on live traces).
+evaluators:
+  - name: faithfulness
+    source: ragas
+    score_type: numeric
+    description: >
+      Fraction of answer claims supported by retrieved context.
+      No ground-truth answer required.
+    variables: [output, context]
+    # In Langfuse UI: Evaluators → Ragas / Faithfulness (or equivalent catalog entry).
+
+  - name: answer_relevancy
+    source: ragas
+    score_type: numeric
+    description: >
+      How well the answer addresses the user query (answer relevancy).
+    variables: [input, output]
+    # In Langfuse UI: Evaluators → Ragas / Answer Relevancy.
+
+  - name: context_precision
+    source: ragas
+    score_type: numeric
+    description: >
+      Whether retrieved chunks are relevant to the query (context precision).
+      Without GT, use the LLM-judge variant that scores context vs question.
+    variables: [input, context]
+    # In Langfuse UI: Evaluators → Ragas / Context Precision (or Context Relevance).
+
+evaluation_rule:
+  target: live_traces
+  filter:
+    name: rag.generate
+  sampling_rate: 1.0
+  # Attach all three evaluators to matching traces after mapping variables above.

@@ -372,7 +372,7 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 - `RAG_GRPC_ADDR` — например, `rag_orchestrator:50052`.
 - `LITELLM_BASE_URL` — например, `http://litellm:4000` (только для агрегированного healthcheck).
 - `GATEWAY_API_KEY` — ключ для аутентификации входящих запросов.
-- `LANGFUSE_HOST` — если используется мониторинг.
+- `LANGFUSE_HOST` / `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` — для `GET /stats` (профиль `monitoring`).
 
 **Ingestion Service:**
 - `QDRANT_HOST`, `QDRANT_GRPC_PORT` (6334).
@@ -391,7 +391,13 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 - `EMBEDDING_MODEL_ALIAS`, `EMBEDDING_QUERY_PREFIX` (`query: ` для e5) — согласованы с индексацией, соответствие модели проверяется по манифесту коллекции (шаг 4.5).
 - `RERANKER_MODEL_ALIAS` — `reranker-default`.
 - `CHAT_MODEL_ALIAS` — `chat-default`.
-- `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` — если используется.
+- `LANGFUSE_HOST`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` — трассировка `rag.generate` (пустые ключи → no-op).
+
+**Langfuse (профиль `monitoring`):**
+- Compose: `langfuse` + `langfuse-db` (Postgres). UI на `:3000`.
+- Init-ключи/юзер через `LANGFUSE_INIT_*` / `LANGFUSE_PUBLIC_KEY`/`SECRET_KEY` (см. `.env.example`).
+- Judge: конфиг `configs/langfuse_judge.yaml` (Ragas-метрики, маппинг переменных; настройка эвалюаторов в UI Langfuse, не код).
+- `ENCRYPTION_KEY` — 64 hex (`openssl rand -hex 32`).
 
 **LiteLLM Proxy:**
 - `configs/litellm.yaml` — model_list с алиасами и бекендами (см. раздел 2.2); смена бекенда (self-hosted ↔ внешний API) — правка этого файла, потребители не меняются.

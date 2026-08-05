@@ -13,6 +13,7 @@ from rag_orchestrator.config import Settings
 from rag_orchestrator.litellm_client import LiteLLMClient
 from rag_orchestrator.pipeline import RagPipeline
 from rag_orchestrator.qdrant_reader import QdrantReader
+from rag_orchestrator.tracing import build_tracer
 from ragvalod_proto import rag_pb2, rag_pb2_grpc
 
 settings = Settings()
@@ -109,7 +110,12 @@ async def serve() -> None:
         reranker_model_alias=settings.reranker_model_alias,
         chat_model_alias=settings.chat_model_alias,
     )
-    pipeline = RagPipeline(settings, store, llm)
+    tracer = build_tracer(
+        host=settings.langfuse_host,
+        public_key=settings.langfuse_public_key,
+        secret_key=settings.langfuse_secret_key,
+    )
+    pipeline = RagPipeline(settings, store, llm, tracer=tracer)
     servicer = RagServicer(store, pipeline)
 
     server = grpc.aio.server()

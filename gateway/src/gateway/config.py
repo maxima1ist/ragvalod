@@ -12,4 +12,7 @@ class Settings(BaseSettings):
     ingestion_grpc_addr: str = "ingestion:50051"
     rag_grpc_addr: str = "rag_orchestrator:50052"
     litellm_base_url: str = "http://litellm:4000"
+    langfuse_host: str = "http://langfuse:3000"
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
     log_level: str = "INFO"

@@ -25,3 +25,6 @@ class Settings(BaseSettings):
     default_temperature: float = 0.2
     default_max_tokens: int = 512
     log_level: str = "INFO"
+    langfuse_host: str = "http://langfuse:3000"
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""

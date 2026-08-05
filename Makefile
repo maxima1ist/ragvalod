@@ -1,7 +1,7 @@
-.PHONY: help sync protos lint test smoke-qdrant smoke-litellm bench-local-llm up up-local-llm down
+.PHONY: help sync protos lint test smoke-qdrant smoke-litellm smoke-langfuse bench-local-llm up up-local-llm up-monitoring down
 
 help:
-	@echo "Targets: sync | protos | lint | test | smoke-qdrant | smoke-litellm | bench-local-llm | up | up-local-llm | down"
+	@echo "Targets: sync | protos | lint | test | smoke-qdrant | smoke-litellm | smoke-langfuse | bench-local-llm | up | up-local-llm | up-monitoring | down"
 
 sync:
 	uv sync --all-packages --group dev
@@ -26,6 +26,9 @@ smoke-qdrant:
 smoke-litellm:
 	uv run python scripts/smoke_litellm.py
 
+smoke-langfuse:
+	LANGFUSE_HOST=$${LANGFUSE_HOST:-http://localhost:3000} uv run python scripts/smoke_langfuse.py
+
 bench-local-llm:
 	uv run python scripts/bench_local_llm.py
 
@@ -34,6 +37,9 @@ up:
 
 up-local-llm:
 	bash scripts/up.sh --profile local-llm
+
+up-monitoring:
+	bash scripts/up.sh --profile monitoring
 
 down:
 	bash scripts/down.sh
