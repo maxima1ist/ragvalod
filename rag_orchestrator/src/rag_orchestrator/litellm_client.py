@@ -92,15 +92,22 @@ class LiteLLMClient:
         temperature: float,
         max_tokens: int,
     ) -> str:
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        # Mistral-Instruct chat templates (v0.2 AWQ via vLLM) require alternating
+        # user/assistant turns and reject a leading `system` role. Fold instructions
+        # into the user message — works for OpenAI-compatible APIs too.
+        content = (
+            f"{system_prompt.strip()}\n\n{user_prompt.strip()}"
+            if system_prompt.strip()
+            else user_prompt
+        )
+        async with httpx.AsyncClient(timeout=300.0) as client:
             response = await client.post(
                 f"{self._base_url}/v1/chat/completions",
                 headers=self._headers(),
                 json={
                     "model": self._chat_model_alias,
                     "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
+                        {"role": "user", "content": content},
                     ],
                     "temperature": temperature,
                     "max_tokens": max_tokens,
