@@ -314,11 +314,11 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 
 ### Этап 8: Локальный инференс через vLLM
 
-**Шаг 8.1:** Выбрать модель под тестовый стенд: `TheBloke/Mistral-7B-Instruct-v0.2-AWQ` (4-bit AWQ, ~4 ГБ весов под RTX 3070 8 ГБ). Альтернатива — Llama-3-8B-Instruct AWQ/GPTQ (часто нужен `HUGGING_FACE_HUB_TOKEN`). FP16 7B на 8 ГБ не укладывается — только квантизация.
+**Шаг 8.1:** Выбрать модель под тестовый стенд: `Qwen/Qwen2.5-7B-Instruct-AWQ` (4-bit AWQ, ~5–6 ГБ весов под RTX 3070 8 ГБ; нормальный русский). Ранее пробовали `TheBloke/Mistral-7B-Instruct-v0.2-AWQ` — быстрее/легче, но генерация почти только EN. FP16 7B на 8 ГБ не укладывается — только квантизация.
 
 **Шаг 8.2:** Добавить в compose сервис `vllm` (образ `vllm/vllm-openai`) под профилем `local-llm`:
 ```
---model TheBloke/Mistral-7B-Instruct-v0.2-AWQ --quantization awq_marlin --dtype auto
+--model Qwen/Qwen2.5-7B-Instruct-AWQ --quantization awq_marlin --dtype auto
 --max-model-len 4096 --enforce-eager --gpu-memory-utilization 0.85
 ```
 Примонтировать кэш HuggingFace. Без профиля образ не тянется и контейнер не поднимается. На ноутбуках с shared VRAM `gpu-memory-utilization` держать ≤0.85. Для скачивания весов в контейнере задать `HF_HUB_DISABLE_XET=1` (иначе частые DNS-ошибки HF Xet).
@@ -403,7 +403,7 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 - Модели (эмбеддер, реранкер) задаются аргументами запуска контейнера в compose; volume под кэш HuggingFace.
 
 **vLLM (только профиль `local-llm`):**
-- `MODEL_NAME` — полное имя модели на HuggingFace (дефолт `TheBloke/Mistral-7B-Instruct-v0.2-AWQ`).
+- `MODEL_NAME` — полное имя модели на HuggingFace (дефолт `Qwen/Qwen2.5-7B-Instruct-AWQ`).
 - `VLLM_QUANTIZATION` — `awq` (для AWQ-весов).
 - `MAX_MODEL_LEN` — 4096 (при OOM снизить до 2048).
 - `VLLM_GPU_MEMORY_UTILIZATION` — 0.85 на ноутбуках с shared VRAM.

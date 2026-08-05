@@ -7,7 +7,7 @@
 model_list:
   - model_name: chat-default
     litellm_params:
-      model: hosted_vllm/TheBloke/Mistral-7B-Instruct-v0.2-AWQ
+      model: hosted_vllm/Qwen/Qwen2.5-7B-Instruct-AWQ
       api_base: http://vllm:8000/v1
       api_key: "none"
       # OpenRouter fallback (stage 3): uncomment and comment the block above.
