@@ -96,13 +96,13 @@
 > Пользователь подтвердил: Notion retrieval/чанки нормальные (текст, заголовки, метаданные).
 > GPU из Docker подтверждена 2026-08-05 (`docker run --gpus all … nvidia-smi` → RTX 3070). Шпаргалка хоста: [host_gpu_setup.md](./host_gpu_setup.md).
 
-## Этап 8: Локальный инференс через vLLM — IN PROGRESS
+## Этап 8: Локальный инференс через vLLM — DONE
 
 - [x] **Шаг 8.1:** Выбор модели (7B в 4-bit под тестовый стенд) — DONE 2026-08-05: `TheBloke/Mistral-7B-Instruct-v0.2-AWQ` (AWQ 4-bit); FP16 на 8 ГБ не берём. Env: `MODEL_NAME` / `VLLM_*` в `.env.example`.
-- [x] **Шаг 8.2:** Сервис `vllm` в compose под профилем `local-llm` — DONE 2026-08-05: образ `vllm/vllm-openai:v0.9.2`, `gpus: all`, health `/v1/models`, порт хоста 8001, `make up-local-llm`; litellm `depends_on.vllm` с `required: false`.
+- [x] **Шаг 8.2:** Сервис `vllm` в compose под профилем `local-llm` — DONE 2026-08-05: образ `vllm/vllm-openai:v0.9.2`, `gpus: all`, health `/v1/models`, порт хоста 8001, `make up-local-llm`; litellm `depends_on.vllm` с `required: false`. Позже: `HF_HUB_DISABLE_XET=1`, квантизация `awq_marlin`.
 - [x] **Шаг 8.3:** Перевод алиаса `chat-default` на vLLM-бекенд в `configs/litellm.yaml` — DONE 2026-08-05: `hosted_vllm/TheBloke/Mistral-7B-Instruct-v0.2-AWQ` → `http://vllm:8000/v1`; OpenRouter оставлен закомментированным фолбэком.
-- [ ] **Шаг 8.4:** Полный цикл через Gateway на локальной модели, без OOM — TODO
-- [ ] **Шаг 8.5:** Нагрузочное тестирование, тюнинг параметров vLLM — TODO
+- [x] **Шаг 8.4:** Полный цикл через Gateway на локальной модели, без OOM — DONE 2026-08-05: `/v1/models` ок; `POST /generate` → RGV-2026-B7-8814 / Miroslava; VRAM ~7.3/8.2 ГБ. Chat: system→user fold (Mistral v0.2 template).
+- [x] **Шаг 8.5:** Нагрузочное тестирование, тюнинг параметров vLLM — DONE 2026-08-05: `scripts/bench_local_llm.py`; pure vLLM ~77 tok/s (128 tok); e2e wall ~9–11s (embed+rerank+gen); parallel=2 без ошибок. Дефолты `max-num-seqs=64`, `gpu-memory-utilization=0.85` оставлены.
 
 > ### 🛑 ЧЕКПОИНТ 5 — после этапа 8 — [ ] TODO
 >

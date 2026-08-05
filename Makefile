@@ -1,7 +1,7 @@
-.PHONY: help sync protos lint test smoke-qdrant smoke-litellm up up-local-llm down
+.PHONY: help sync protos lint test smoke-qdrant smoke-litellm bench-local-llm up up-local-llm down
 
 help:
-	@echo "Targets: sync | protos | lint | test | smoke-qdrant | smoke-litellm | up | up-local-llm | down"
+	@echo "Targets: sync | protos | lint | test | smoke-qdrant | smoke-litellm | bench-local-llm | up | up-local-llm | down"
 
 sync:
 	uv sync --all-packages --group dev
@@ -25,6 +25,9 @@ smoke-qdrant:
 
 smoke-litellm:
 	uv run python scripts/smoke_litellm.py
+
+bench-local-llm:
+	uv run python scripts/bench_local_llm.py
 
 up:
 	bash scripts/up.sh
