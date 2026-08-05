@@ -1,7 +1,7 @@
-.PHONY: help sync protos lint test smoke-qdrant smoke-litellm up down
+.PHONY: help sync protos lint test smoke-qdrant smoke-litellm up up-local-llm down
 
 help:
-	@echo "Targets: sync | protos | lint | test | smoke-qdrant | smoke-litellm | up | down"
+	@echo "Targets: sync | protos | lint | test | smoke-qdrant | smoke-litellm | up | up-local-llm | down"
 
 sync:
 	uv sync --all-packages --group dev
@@ -28,6 +28,9 @@ smoke-litellm:
 
 up:
 	bash scripts/up.sh
+
+up-local-llm:
+	bash scripts/up.sh --profile local-llm
 
 down:
 	bash scripts/down.sh

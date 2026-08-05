@@ -314,13 +314,14 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 
 ### Этап 8: Локальный инференс через vLLM
 
-**Шаг 8.1:** Выбрать модель под тестовый стенд: `mistralai/Mistral-7B-Instruct-v0.2` или `meta-llama/Meta-Llama-3-8B-Instruct` в 4-bit (AWQ/GPTQ).
+**Шаг 8.1:** Выбрать модель под тестовый стенд: `TheBloke/Mistral-7B-Instruct-v0.2-AWQ` (4-bit AWQ, ~4 ГБ весов под RTX 3070 8 ГБ). Альтернатива — Llama-3-8B-Instruct AWQ/GPTQ (часто нужен `HUGGING_FACE_HUB_TOKEN`). FP16 7B на 8 ГБ не укладывается — только квантизация.
 
 **Шаг 8.2:** Добавить в compose сервис `vllm` (образ `vllm/vllm-openai`) под профилем `local-llm`:
 ```
---model <model_name> --dtype half --max-model-len 4096 --enforce-eager --gpu-memory-utilization 0.9
+--model TheBloke/Mistral-7B-Instruct-v0.2-AWQ --quantization awq --dtype auto
+--max-model-len 4096 --enforce-eager --gpu-memory-utilization 0.85
 ```
-Примонтировать кэш HuggingFace. Без профиля образ не тянется и контейнер не поднимается.
+Примонтировать кэш HuggingFace. Без профиля образ не тянется и контейнер не поднимается. На ноутбуках с shared VRAM `gpu-memory-utilization` держать ≤0.85.
 
 **Шаг 8.3:** Перевести алиас `chat-default` в `configs/litellm.yaml` на vLLM-бекенд (`hosted_vllm/<model>`, `api_base: http://vllm:8000/v1`). Кода не требуется — переключение одной записью конфига, без изменений в остальных сервисах.
 
@@ -402,9 +403,12 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 - Модели (эмбеддер, реранкер) задаются аргументами запуска контейнера в compose; volume под кэш HuggingFace.
 
 **vLLM (только профиль `local-llm`):**
-- `MODEL_NAME` — полное имя модели на HuggingFace.
-- `MAX_MODEL_LEN` — 4096.
-- Дополнительные флаги — см. документацию vLLM.
+- `MODEL_NAME` — полное имя модели на HuggingFace (дефолт `TheBloke/Mistral-7B-Instruct-v0.2-AWQ`).
+- `VLLM_QUANTIZATION` — `awq` (для AWQ-весов).
+- `MAX_MODEL_LEN` — 4096 (при OOM снизить до 2048).
+- `VLLM_GPU_MEMORY_UTILIZATION` — 0.85 на ноутбуках с shared VRAM.
+- `VLLM_MAX_NUM_SEQS` — лимит параллельных seq (тюнинг на шаге 8.5).
+- Хост: [host_gpu_setup.md](./host_gpu_setup.md).
 
 ---
 

@@ -151,6 +151,10 @@ services:
     depends_on:
       infinity:
         condition: service_healthy
+      # When profile local-llm is off, this dependency is skipped (Compose required: false).
+      vllm:
+        condition: service_healthy
+        required: false
     networks:
       - ragvalod
     healthcheck:
@@ -197,37 +201,54 @@ services:
       retries: 40
       start_period: 600s
 
-  # Stage 8 — requires NVIDIA Container Toolkit.
+  # Stage 8 — requires NVIDIA Container Toolkit (see docs/host_gpu_setup.md).
+  # Default model: Mistral-7B-Instruct-v0.2 AWQ (~4GB weights) for 8GB VRAM stands.
+  # Without profile `local-llm` this image is not pulled / started.
   vllm:
-    image: vllm/vllm-openai:latest
+    image: vllm/vllm-openai:v0.9.2
     profiles:
       - local-llm
-    runtime: nvidia
+    ports:
+      - "8001:8000"
+    ipc: host
+    gpus: all
     environment:
       HUGGING_FACE_HUB_TOKEN: ${HUGGING_FACE_HUB_TOKEN:-}
-      MODEL_NAME: ${MODEL_NAME:-mistralai/Mistral-7B-Instruct-v0.2}
-      MAX_MODEL_LEN: ${MAX_MODEL_LEN:-4096}
+      HF_HOME: /root/.cache/huggingface
+      # Keep below 1.0 on laptops sharing VRAM with the display.
+      VLLM_ATTENTION_BACKEND: ${VLLM_ATTENTION_BACKEND:-}
     volumes:
       - hf_cache:/root/.cache/huggingface
     command:
       - "--model"
-      - "${MODEL_NAME:-mistralai/Mistral-7B-Instruct-v0.2}"
+      - "${MODEL_NAME:-TheBloke/Mistral-7B-Instruct-v0.2-AWQ}"
+      - "--quantization"
+      - "${VLLM_QUANTIZATION:-awq}"
       - "--dtype"
-      - "half"
+      - "auto"
       - "--max-model-len"
       - "${MAX_MODEL_LEN:-4096}"
       - "--enforce-eager"
       - "--gpu-memory-utilization"
-      - "0.9"
+      - "${VLLM_GPU_MEMORY_UTILIZATION:-0.85}"
+      - "--max-num-seqs"
+      - "${VLLM_MAX_NUM_SEQS:-64}"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8000"
     networks:
       - ragvalod
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://127.0.0.1:8000/v1/models >/dev/null || exit 1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 600s
 
   # Stage 9 — monitoring profile.
   langfuse:
