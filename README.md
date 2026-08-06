@@ -287,4 +287,5 @@ make smoke-qdrant | smoke-litellm | smoke-langfuse
 
 - [Design & plan](docs/design_and_plan.md) — architecture and staged roadmap
 - [Progress](docs/progress.md) — step tracker
+- [TODO](docs/TODO.md) — manual follow-ups (Google Drive live, LLM-as-a-judge)
 - [Host GPU setup](docs/host_gpu_setup.md) — NVIDIA driver + Container Toolkit (profile `local-llm` / vLLM)
