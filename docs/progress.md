@@ -111,16 +111,14 @@
 ## Этап 9: Мониторинг и оценка (Langfuse + Judge) — DONE
 
 - [x] **Шаг 9.1:** Langfuse под профилем `monitoring`, трассировка из RAG Orchestrator — DONE 2026-08-05: `langfuse` + `langfuse-db` (Postgres 17) под `monitoring`; SDK `langfuse<3` в RAG; `tracing.py` + spans embed/search/rerank/prompt/chat. Seed keys через `LANGFUSE_INIT_*`. `make up-monitoring` / `make smoke-langfuse`. Проверено: health OK, `rag.generate` в UI/API.
-- [x] **Шаг 9.2:** Judge: встроенные LLM-as-a-judge эвалюаторы Langfuse + метрики Ragas (конфигурация, не код) — DONE 2026-08-05: `configs/langfuse_judge.yaml` — faithfulness / answer_relevancy / context_precision, маппинг `query`/`answer`/`used_chunks`, judge LLM → LiteLLM `chat-default`. Настройка эвалюаторов в UI Langfuse (не самописный код).
+- [x] **Шаг 9.2:** Judge: встроенные LLM-as-a-judge эвалюаторы Langfuse + метрики Ragas (конфигурация, не код) — DONE 2026-08-05 / уточнение 2026-08-06: рецепт в `configs/langfuse_judge.yaml` + vLLM tool calling (`hermes`) включён. **Managed LLM-as-a-judge UI на Langfuse `2.95` OSS недоступен** (entitlement `model-based-evaluations` / `playground` только cloud; в Settings нет LLM Connections — путать с Project API Keys `pk-lf-…` нельзя). Разбор/включение отложен в конец плана (после этапа 11).
 - [x] **Шаг 9.3:** Персистентное хранение отладочных данных запросов — DONE 2026-08-05: Langfuse Postgres volume; в трейсе — query, used_chunks, system/user prompts (span `prompt`), answer. Проверено: trace `rag.generate` с 5 observations + metadata.chunk_ids.
 - [x] **Шаг 9.4:** Эндпоинт агрегированной статистики в Gateway (опционально) — DONE 2026-08-05: `GET /stats` (API-key) → Langfuse HTTP traces/scores; без ключей `enabled: false`. Unit + live `/stats` с recent `rag.generate`.
 
-> ### 🛑 ЧЕКПОИНТ 6 — после этапа 9 — [ ] TODO
+> ### 🛑 ЧЕКПОИНТ 6 — после этапа 9 — [x] DONE 2026-08-06
 >
-> Пользователь валидирует в UI http://localhost:3000 (логин `admin@ragvalod.local` / `ragvalod-admin` по умолчанию):
-> 1. Трейсы `rag.generate` видны (query, чанки, промпты, ответ).
-> 2. Judge: в Langfuse UI настроены эвалюаторы по `configs/langfuse_judge.yaml` (Ragas: faithfulness, answer_relevancy, context_precision) с LLM connection на LiteLLM; scores появляются на трейсах.
-> После подтверждения — можно этап 10. Не начинать этап 10 без явного OK.
+> Пользователь подтвердил: трейсы `rag.generate` в UI ок (query / chunks / prompts / answer).
+> Managed Langfuse LLM-as-a-judge **пока нет** (OSS 2.95) — не блокирует переход; разобрать позже (шаг после этапа 11).
 
 ## Этап 10: Расширение источников и автоматизация ингеста — TODO
 
@@ -134,3 +132,7 @@
 - [ ] **Шаг 11.2:** Kubernetes-манифесты — TODO
 - [ ] **Шаг 11.3:** Горизонтальное масштабирование (Qdrant, реплики, мульти-GPU vLLM) — TODO
 - [ ] **Шаг 11.4:** Vault/KMS, Prometheus + Grafana — TODO
+
+## После этапа 11 (отложено) — TODO
+
+- [ ] **Шаг D.1:** Включить Langfuse LLM-as-a-judge (сейчас недоступен на `langfuse/langfuse:2` / 2.95 OSS) — TODO: апгрейд на Langfuse v3 (где evals/playground в OSS) **или** внешний judge-скрипт через LiteLLM + запись scores в Langfuse API; критерии — `configs/langfuse_judge.yaml` (Ragas: faithfulness, answer_relevancy, context_precision). Project API Keys (`pk-lf-…`) ≠ LLM Connections.

@@ -1,8 +1,15 @@
-# Langfuse LLM-as-a-judge evaluators for ragvalod (stage 9.2).
+# Langfuse LLM-as-a-judge evaluators for ragvalod (stage 9.2 / deferred D.1).
 #
-# No custom judge code: configure these in the Langfuse UI (Evaluators) or via
-# Langfuse's managed catalog (Ragas partnership). Point the Langfuse LLM
-# connection at LiteLLM so the judge uses the same model gateway as RAG:
+# STATUS 2026-08-06: managed LLM-as-a-judge UI is NOT available on
+# langfuse/langfuse:2 (2.95 OSS) — entitlements playground /
+# model-based-evaluations are cloud-only in that build. Project Settings
+# "API Keys" (pk-lf-… / sk-lf-…) are for TRACE INGEST only, not LLM Connections.
+# Revisit after stage 11 (step D.1): upgrade to Langfuse v3 or external judge
+# script via LiteLLM + scores API.
+#
+# No custom judge code (when UI exists): configure these in the Langfuse UI
+# (Evaluators) or via Langfuse's managed catalog (Ragas partnership). Point the
+# Langfuse LLM connection at LiteLLM so the judge uses the same model gateway:
 #
 #   base_url: http://litellm:4000/v1   (from Langfuse container network)
 #   api_key:  $LITELLM_MASTER_KEY
@@ -17,11 +24,10 @@
 #   {{output}}  ← trace.output.answer
 #   {{context}} ← trace.metadata.used_chunks[].text (join)
 #
-# UI steps (http://localhost:3000, project ragvalod):
-# 1) Settings → LLM Connections → OpenAI-compatible → base http://litellm:4000/v1
-#    key=LITELLM_MASTER_KEY, custom model chat-default
+# UI steps (when entitlement available; http://localhost:3000, project ragvalod):
+# 1) Settings → LLM Connections / LLM API Keys → OpenAI-compatible
+#    base http://litellm:4000/v1, key=LITELLM_MASTER_KEY, model chat-default
 # 2) Evaluators → create faithfulness / answer_relevancy / context_precision
-#    (Ragas catalog if available, else custom numeric prompts)
 # 3) Map variables to trace fields above; rule: live traces name=rag.generate
 # 4) Run POST /generate → Scores appear on the new trace
 #

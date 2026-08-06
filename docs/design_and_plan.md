@@ -335,7 +335,7 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 
 **Шаг 9.1:** Поднять Langfuse под compose-профилем `monitoring`. Интеграция через SDK (HTTP): RAG Orchestrator трассирует каждый запрос (запрос, найденные чанки, промпт, ответ).
 
-**Шаг 9.2:** Judge без самописного кода: использовать встроенные **LLM-as-a-judge эвалюаторы Langfuse** — они вешаются на трейсы, асинхронно оценивают (запрос, контекст, ответ) внешней моделью и пишут score. Критерии и промпты не изобретать: взять стандартизированные RAG-метрики без ground truth из **Ragas** (faithfulness, answer relevancy, context precision). Шаг сводится к конфигурации эвалюаторов, а не к реализации.
+**Шаг 9.2:** Judge без самописного кода: использовать встроенные **LLM-as-a-judge эвалюаторы Langfuse** — они вешаются на трейсы, асинхронно оценивают (запрос, контекст, ответ) внешней моделью и пишут score. Критерии и промпты не изобретать: взять стандартизированные RAG-метрики без ground truth из **Ragas** (faithfulness, answer relevancy, context precision). Шаг сводится к конфигурации эвалюаторов, а не к реализации. *(2026-08-06: на образе `langfuse/langfuse:2` / 2.95 OSS managed evals UI недоступен — entitlement cloud-only; рецепт оставлен в `configs/langfuse_judge.yaml`, включение — шаг D.1 после этапа 11.)*
 
 **Шаг 9.3:** Организовать персистентное хранение отладочных данных запросов (чанки, промпты) — то, что до этого только возвращалось в ответе и писалось в stdout-логи.
 
@@ -365,6 +365,11 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 
 ---
 
+### После этапа 11 (отложено)
+
+**Шаг D.1:** Включить рабочий Langfuse LLM-as-a-judge. На текущем `langfuse:2` (2.95 OSS) UI LLM Connections / model-based evals недоступен (entitlement). Варианты: апгрейд на Langfuse v3 (evals/playground в OSS) или внешний judge через LiteLLM + scores API. Рецепт метрик — `configs/langfuse_judge.yaml`. Не путать Project API Keys (`pk-lf-…`, ingest трейсов) с LLM Connections (вызов модели из Langfuse).
+
+---
 ## 4. Детали конфигурации и переменные окружения
 
 **API Gateway:**
