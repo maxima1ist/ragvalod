@@ -8,12 +8,24 @@
 #   api_key:  $LITELLM_MASTER_KEY
 #   model:    chat-default
 #
+# Prerequisite: vLLM must expose OpenAI tool calling (compose already sets
+# --enable-auto-tool-choice --tool-call-parser hermes for Qwen2.5).
+# Without that, Langfuse judge fails with tool_choice=auto errors.
+#
 # Trace field mapping (what RAG Orchestrator writes):
 #   {{input}}   ← trace.input.query
 #   {{output}}  ← trace.output.answer
 #   {{context}} ← trace.metadata.used_chunks[].text (join)
 #
-# Bring up: docker compose --profile monitoring up -d
+# UI steps (http://localhost:3000, project ragvalod):
+# 1) Settings → LLM Connections → OpenAI-compatible → base http://litellm:4000/v1
+#    key=LITELLM_MASTER_KEY, custom model chat-default
+# 2) Evaluators → create faithfulness / answer_relevancy / context_precision
+#    (Ragas catalog if available, else custom numeric prompts)
+# 3) Map variables to trace fields above; rule: live traces name=rag.generate
+# 4) Run POST /generate → Scores appear on the new trace
+#
+# Bring up: docker compose --profile monitoring --profile local-llm up -d
 # UI:       http://localhost:3000  (admin@ragvalod.local / ragvalod-admin by default)
 
 version: 1

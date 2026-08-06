@@ -414,6 +414,7 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 - `MAX_MODEL_LEN` — 4096 (при OOM снизить до 2048).
 - `VLLM_GPU_MEMORY_UTILIZATION` — 0.85 на ноутбуках с shared VRAM.
 - `VLLM_MAX_NUM_SEQS` — лимит параллельных seq (тюнинг на шаге 8.5).
+- `VLLM_TOOL_CALL_PARSER` — парсер tool calling (`hermes` для Qwen2.5); в compose также `--enable-auto-tool-choice` (нужно для Langfuse LLM-as-a-judge).
 - Хост: [host_gpu_setup.md](./host_gpu_setup.md).
 
 ---

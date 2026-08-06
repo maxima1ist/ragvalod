@@ -244,6 +244,11 @@ services:
       - "${VLLM_GPU_MEMORY_UTILIZATION:-0.85}"
       - "--max-num-seqs"
       - "${VLLM_MAX_NUM_SEQS:-64}"
+      # Needed for Langfuse LLM-as-a-judge (structured tool calls via LiteLLM).
+      # Qwen2.5 Instruct uses Hermes-style tool format.
+      - "--enable-auto-tool-choice"
+      - "--tool-call-parser"
+      - "${VLLM_TOOL_CALL_PARSER:-hermes}"
       - "--host"
       - "0.0.0.0"
       - "--port"
