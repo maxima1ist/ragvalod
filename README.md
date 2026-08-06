@@ -150,6 +150,20 @@ Without `page_ids` / `database_ids`, Notion searches accessible pages (default `
 
 After a full success, `GET /health` shows `data_initialized: true` and you can call `POST /generate`.
 
+### Clear the vector DB
+
+Deletes the Qdrant collection `documents` (chunks + ingest markers). Stack stays up.
+
+```bash
+make clear-qdrant
+# drop RAG's in-memory data_initialized cache:
+docker compose restart rag_orchestrator
+```
+
+Equivalent: `curl -X DELETE http://localhost:6333/collections/documents`
+
+To wipe the whole Qdrant volume (and other Compose volumes): `make down` then `docker compose down -v` (also removes HF cache / Langfuse DB).
+
 ---
 
 ## Components
@@ -213,6 +227,7 @@ make up-local-llm      # + profile local-llm
 make up-monitoring     # + profile monitoring
 make up-all            # + local-llm + monitoring
 make down              # stop all profiles
+make clear-qdrant      # delete Qdrant collection `documents`
 make test / make lint
 make smoke-qdrant | smoke-litellm | smoke-langfuse
 ```
