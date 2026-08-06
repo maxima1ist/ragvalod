@@ -23,18 +23,18 @@ cp .env.example .env
 #    B) OpenRouter — set OPENROUTER_API_KEY in .env and switch chat-default
 #       in configs/litellm.yaml to the commented OpenRouter block
 
-# 3. Put files to ingest under data/local_files/ (sample welcome.md is already there)
-
-# 4. Start (profiles can be combined)
+# 3. Start (profiles can be combined)
 make up                 # base stack
 make up-local-llm       # base + vLLM
 make up-monitoring      # base + Langfuse
 make up-all             # base + vLLM + Langfuse
 
-# 5. Smoke: health → ingest local files → generate
+# 4. Smoke test only — ingests sample corpus from test_data/ (not your real docs)
 uv sync --all-packages --group dev   # once, for host-side scripts
 uv run python gateway/scripts/e2e_rest.py
 ```
+
+**Real usage:** put `.txt` / `.md` / `.pdf` / `.docx` into empty `data/`, then ingest that folder (default path). Keep `test_data/` for smoke/e2e only.
 
 Tear down (keeps volumes): `make down`.
 
@@ -66,33 +66,40 @@ curl -s -H "X-API-Key: change-me" http://localhost:8000/sources
 
 ### Local files
 
-1. Put `.txt` / `.md` / `.pdf` / `.docx` under `data/local_files/` (or whatever `LOCAL_FILES_DIR` points to). That host path is mounted read-only into the ingestion container as `/data/local_files`.
-2. Start a job:
+Two host dirs are mounted into the ingestion container:
+
+| Host | Container | Purpose |
+| --- | --- | --- |
+| `data/` (default `LOCAL_FILES_DIR`) | `/data/local_files` | **Your** documents (empty by default) |
+| `test_data/` | `/test_data` | Sample corpus for smoke/e2e only |
+
+Choose the directory with ingest `options.path` (already supported). Omit it to use the default `/data/local_files`.
+
+**Real ingest** (files you put in `data/`):
 
 ```bash
 curl -s -X POST http://localhost:8000/ingest \
   -H "X-API-Key: change-me" \
   -H "Content-Type: application/json" \
   -d '{"sources": [{"name": "local_files"}]}'
-# → {"job_id":"..."}
+# same as: "options": {"path": "/data/local_files"}
 ```
 
-Optional override of the directory inside the container:
+**Smoke / test ingest** (`test_data/`):
 
-```json
-{"sources": [{"name": "local_files", "options": {"path": "/data/local_files"}}]}
+```bash
+curl -s -X POST http://localhost:8000/ingest \
+  -H "X-API-Key: change-me" \
+  -H "Content-Type: application/json" \
+  -d '{"sources": [{"name": "local_files", "options": {"path": "/test_data"}}]}'
 ```
 
-3. Poll until done:
+Or: `uv run python gateway/scripts/e2e_rest.py` (uses `/test_data` by default).
+
+Poll until done:
 
 ```bash
 curl -s -H "X-API-Key: change-me" http://localhost:8000/ingest/<job_id>
-```
-
-Or run the all-in-one smoke script (health → ingest `local_files` → generate):
-
-```bash
-uv run python gateway/scripts/e2e_rest.py
 ```
 
 ### Notion
@@ -173,7 +180,7 @@ Copy `.env.example` → `.env` (or let `make up` / `scripts/up.sh` create it). I
 - **`GATEWAY_API_KEY`** — protect the REST API
 - **`LITELLM_MASTER_KEY`** — shared key for LiteLLM (`sk-ragvalod-local` by default)
 - **`OPENROUTER_API_KEY` / `OPENAI_API_KEY`** — if chat goes through an external API
-- **`LOCAL_FILES_DIR`** — host path mounted read-only into ingestion (default `./data/local_files`)
+- **`LOCAL_FILES_DIR`** — host path mounted at `/data/local_files` (default `./data`)
 - **vLLM:** `MODEL_NAME`, `VLLM_QUANTIZATION`, `MAX_MODEL_LEN`, …
 - **Langfuse:** keys / admin user (defaults match compose seed: `admin@ragvalod.local` / `ragvalod-admin`)
 
