@@ -118,6 +118,38 @@ class QdrantDocumentStore:
         await self._client.upsert(collection_name=self._collection, points=points)
         return len(points)
 
+    async def delete_by_doc_ids(self, source: str, doc_ids: list[str]) -> int:
+        """Delete chunk points for the given source + document ids."""
+        if not doc_ids:
+            return 0
+        await self._client.delete(
+            collection_name=self._collection,
+            points_selector=rest_models.FilterSelector(
+                filter=rest_models.Filter(
+                    must=[
+                        rest_models.FieldCondition(
+                            key="kind",
+                            match=rest_models.MatchValue(value="chunk"),
+                        ),
+                        rest_models.FieldCondition(
+                            key="source",
+                            match=rest_models.MatchValue(value=source),
+                        ),
+                        rest_models.FieldCondition(
+                            key="doc_id",
+                            match=rest_models.MatchAny(any=list(doc_ids)),
+                        ),
+                    ]
+                )
+            ),
+        )
+        logger.info(
+            "deleted qdrant chunks source=%s doc_ids=%s",
+            source,
+            len(doc_ids),
+        )
+        return len(doc_ids)
+
     async def write_source_marker(self, source: str, document_count: int) -> None:
         await self._upsert_service_point(
             f"__source_marker__:{source}",

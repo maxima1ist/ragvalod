@@ -12,6 +12,7 @@ from ingestion.config import Settings
 from ingestion.credentials_crypto import CredentialsCrypto
 from ingestion.jobs import JobManager
 from ingestion.main import IngestionServicer
+from ingestion.pipeline.doc_manager import DocumentManager
 from ingestion.pipeline.embeddings import EmbeddingClient
 from ingestion.qdrant_store import QdrantDocumentStore
 from ingestion.schedule_store import ScheduleStore
@@ -39,7 +40,13 @@ async def ingestion_channel(tmp_path: Path):
         embedding_model_name="intfloat/multilingual-e5-small",
         vector_size=384,
     )
-    jobs = JobManager(settings, factory, embeddings, store)
+    jobs = JobManager(
+        settings,
+        factory,
+        embeddings,
+        store,
+        doc_manager=DocumentManager(tmp_path / "docstores"),
+    )
     schedules = ScheduleStore(tmp_path / "schedules.json", CredentialsCrypto(""))
     scheduler = IngestScheduler(schedules, factory, jobs)
 

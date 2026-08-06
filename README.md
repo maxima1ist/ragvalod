@@ -176,6 +176,8 @@ Useful `options` (all strings):
 
 After a full success, `GET /health` shows `data_initialized: true` and you can call `POST /generate`.
 
+Re-ingest is incremental: LlamaIndex `IngestionPipeline` + per-source docstore (under `/data/ingestion/docstores`) skips unchanged documents, re-embeds changed ones, and deletes Qdrant chunks for removed docs. Deterministic chunk IDs from stage 4.5 are kept for upserts.
+
 ### Scheduled ingest
 
 Periodic ingest lives in the Ingestion Service (APScheduler). Credentials on schedules are **Fernet-encrypted at rest** (`INGESTION_CREDENTIALS_ENCRYPTION_KEY` in `.env`). One-shot `POST /ingest` still keeps creds in memory only.

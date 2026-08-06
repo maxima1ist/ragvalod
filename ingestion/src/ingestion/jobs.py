@@ -9,9 +9,11 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
+from pathlib import Path
 
 from ingestion.config import Settings
 from ingestion.pipeline.chunking import chunk_documents
+from ingestion.pipeline.doc_manager import DocumentManager
 from ingestion.pipeline.embeddings import EmbeddingClient
 from ingestion.qdrant_store import QdrantDocumentStore
 from ingestion.sources.base import DataSource
@@ -63,11 +65,13 @@ class JobManager:
         factory: SourceFactory,
         embeddings: EmbeddingClient,
         store: QdrantDocumentStore,
+        doc_manager: DocumentManager | None = None,
     ) -> None:
         self._settings = settings
         self._factory = factory
         self._embeddings = embeddings
         self._store = store
+        self._doc_manager = doc_manager or DocumentManager(Path(settings.data_dir) / "docstores")
         self._jobs: dict[str, JobRecord] = {}
         self._lock = asyncio.Lock()
 
@@ -143,35 +147,64 @@ class JobManager:
                             )
 
                 docs = await adapter.fetch(credentials, options, progress=on_progress)
-                status.message = f"chunking {len(docs)} docs"
-                logger.info("job %s source %s chunking docs=%s", job_id, adapter.name, len(docs))
-                chunks = chunk_documents(
-                    docs,
-                    chunk_size=self._settings.chunk_size,
-                    chunk_overlap=self._settings.chunk_overlap,
-                )
-                status.message = f"embedding {len(chunks)} chunks"
-                logger.info(
-                    "job %s source %s embedding chunks=%s",
-                    job_id,
-                    adapter.name,
-                    len(chunks),
-                )
-                vectors = await self._embeddings.embed_texts([c.text for c in chunks])
-                status.message = f"upserting {len(chunks)} chunks"
-                written = await self._store.upsert_chunks(chunks, vectors)
+                status.message = f"syncing docstore ({len(docs)} docs)"
+                sync = self._doc_manager.sync(adapter.name, docs)
+                if sync.qdrant_doc_ids_to_delete:
+                    status.message = (
+                        f"deleting stale vectors ({len(sync.qdrant_doc_ids_to_delete)} docs)"
+                    )
+                    await self._store.delete_by_doc_ids(adapter.name, sync.qdrant_doc_ids_to_delete)
+
+                written = 0
+                if sync.to_process:
+                    status.message = f"chunking {len(sync.to_process)} docs"
+                    logger.info(
+                        "job %s source %s chunking docs=%s skipped=%s",
+                        job_id,
+                        adapter.name,
+                        len(sync.to_process),
+                        sync.skipped_unchanged,
+                    )
+                    chunks = chunk_documents(
+                        sync.to_process,
+                        chunk_size=self._settings.chunk_size,
+                        chunk_overlap=self._settings.chunk_overlap,
+                    )
+                    status.message = f"embedding {len(chunks)} chunks"
+                    logger.info(
+                        "job %s source %s embedding chunks=%s",
+                        job_id,
+                        adapter.name,
+                        len(chunks),
+                    )
+                    vectors = await self._embeddings.embed_texts([c.text for c in chunks])
+                    status.message = f"upserting {len(chunks)} chunks"
+                    written = await self._store.upsert_chunks(chunks, vectors)
+                else:
+                    logger.info(
+                        "job %s source %s all %s docs unchanged (skipped)",
+                        job_id,
+                        adapter.name,
+                        sync.skipped_unchanged,
+                    )
+
                 await self._store.write_source_marker(adapter.name, document_count=len(docs))
                 status.state = SourceJobState.SUCCEEDED
                 status.documents_processed = len(docs)
                 status.chunks_written = written
-                status.message = "ok"
+                status.message = (
+                    f"ok (processed={len(sync.to_process)} "
+                    f"skipped={sync.skipped_unchanged} deleted={sync.deleted_count})"
+                )
                 successes += 1
                 logger.info(
-                    "job %s source %s ok docs=%s chunks=%s",
+                    "job %s source %s ok docs=%s chunks=%s skipped=%s deleted=%s",
                     job_id,
                     adapter.name,
                     len(docs),
                     written,
+                    sync.skipped_unchanged,
+                    sync.deleted_count,
                 )
             except Exception as exc:
                 failures += 1
