@@ -120,10 +120,10 @@
 > Пользователь подтвердил: трейсы `rag.generate` в UI ок (query / chunks / prompts / answer).
 > Managed Langfuse LLM-as-a-judge **пока нет** (OSS 2.95) — не блокирует переход; разобрать позже (шаг после этапа 11).
 
-## Этап 10: Расширение источников и автоматизация ингеста — TODO
+## Этап 10: Расширение источников и автоматизация ингеста — IN PROGRESS
 
-- [ ] **Шаг 10.1:** Адаптер Google Drive на ридере `llama-index-readers-google` (и далее прочие источники) — TODO
-- [ ] **Шаг 10.2:** Периодический ингест + шифрованное хранение кредов at rest — TODO
+- [x] **Шаг 10.1:** Адаптер Google Drive на ридере `llama-index-readers-google` (и далее прочие источники) — DONE 2026-08-06: `sources/google_drive.py` + factory; credentials `service_account_key`/`authorized_user_info`/`service_account_key_path`; options `folder_id`/`file_ids`/`query`/`drive_id`. Unit-тесты мок-ридера + factory. Live Drive — по наличию SA ключа у пользователя.
+- [~] **Шаг 10.2:** Периодический ингест + шифрованное хранение кредов at rest — IN PROGRESS
 - [ ] **Шаг 10.3:** Дедупликация и удаление через `IngestionPipeline` LlamaIndex (docstore + хэши) — TODO
 
 ## Этап 11: Оптимизация и Kubernetes — TODO

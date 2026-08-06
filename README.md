@@ -148,6 +148,32 @@ Without `page_ids` / `database_ids`, Notion searches accessible pages (default `
 
 `{"all_with_credentials": true}` runs every adapter that does not need credentials (today: `local_files`) plus any credentialed sources you listed with tokens.
 
+### Google Drive
+
+Enable the Drive API in GCP, create a service account, download its JSON key, and **share** the target folder/files with the service account email. Pass the key as a JSON string in credentials (aliases: `service_account_key`, `service_account_json`) or mount a file and pass `service_account_key_path`. OAuth refresh token JSON is also accepted as `authorized_user_info`.
+
+```bash
+curl -s -X POST http://localhost:8000/ingest \
+  -H "X-API-Key: change-me" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sources": [{
+      "name": "google_drive",
+      "credentials": {"service_account_key": "{\"type\":\"service_account\",...}"},
+      "options": {"folder_id": "FOLDER_ID"}
+    }]
+  }'
+```
+
+Useful `options` (all strings):
+
+| Option | Meaning |
+| --- | --- |
+| `folder_id` / `folder` | Drive folder to crawl recursively |
+| `file_ids` / `file_id` | Comma-separated file IDs (instead of folder) |
+| `query` / `query_string` / `search` | Extra Drive query filter |
+| `drive_id` | Shared drive id (optional) |
+
 After a full success, `GET /health` shows `data_initialized: true` and you can call `POST /generate`.
 
 ### Clear the vector DB

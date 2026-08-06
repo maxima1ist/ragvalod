@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from ingestion.config import Settings
 from ingestion.sources.base import DataSource
+from ingestion.sources.google_drive import GoogleDriveDataSource
 from ingestion.sources.local_files import LocalFilesDataSource
 from ingestion.sources.notion import NotionDataSource
 
@@ -22,6 +23,7 @@ class SourceFactory:
         self._adapters: dict[str, DataSource] = {
             LocalFilesDataSource.name: LocalFilesDataSource(settings.local_files_dir),
             NotionDataSource.name: NotionDataSource(),
+            GoogleDriveDataSource.name: GoogleDriveDataSource(),
         }
 
     def list_sources(self) -> list[SourceInfo]:
