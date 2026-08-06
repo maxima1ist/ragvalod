@@ -77,9 +77,12 @@ services:
       INGESTION_EMBEDDING_MODEL_ALIAS: "embedder-default"
       INGESTION_EMBEDDING_MODEL_NAME: "intfloat/multilingual-e5-small"
       INGESTION_EMBEDDING_DOC_PREFIX: "passage: "
+      INGESTION_DATA_DIR: "/data/ingestion"
+      INGESTION_CREDENTIALS_ENCRYPTION_KEY: ${INGESTION_CREDENTIALS_ENCRYPTION_KEY:-}
     volumes:
       - ${LOCAL_FILES_DIR:-./data}:/data/local_files:ro
       - ./test_data:/test_data:ro
+      - ingestion_data:/data/ingestion
     depends_on:
       qdrant:
         condition: service_healthy
@@ -337,3 +340,4 @@ volumes:
   qdrant_data:
   hf_cache:
   langfuse_pg_data:
+  ingestion_data:

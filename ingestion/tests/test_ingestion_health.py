@@ -2,21 +2,26 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import grpc
 import pytest
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 from ingestion.config import Settings
+from ingestion.credentials_crypto import CredentialsCrypto
 from ingestion.jobs import JobManager
 from ingestion.main import IngestionServicer
 from ingestion.pipeline.embeddings import EmbeddingClient
 from ingestion.qdrant_store import QdrantDocumentStore
+from ingestion.schedule_store import ScheduleStore
+from ingestion.scheduler import IngestScheduler
 from ingestion.sources.factory import SourceFactory
 from ragvalod_proto import ingestion_pb2, ingestion_pb2_grpc
 
 
 @pytest.fixture
-async def ingestion_channel():
+async def ingestion_channel(tmp_path: Path):
     settings = Settings()
     factory = SourceFactory(settings)
     embeddings = EmbeddingClient(
@@ -35,10 +40,12 @@ async def ingestion_channel():
         vector_size=384,
     )
     jobs = JobManager(settings, factory, embeddings, store)
+    schedules = ScheduleStore(tmp_path / "schedules.json", CredentialsCrypto(""))
+    scheduler = IngestScheduler(schedules, factory, jobs)
 
     server = grpc.aio.server()
     ingestion_pb2_grpc.add_IngestionServiceServicer_to_server(
-        IngestionServicer(factory, jobs),
+        IngestionServicer(factory, jobs, schedules, scheduler),
         server,
     )
     health_servicer = health.HealthServicer()
@@ -69,3 +76,5 @@ async def test_list_sources_includes_local_files(ingestion_channel: grpc.aio.Cha
     response = await stub.ListSources(ingestion_pb2.ListSourcesRequest())
     names = {s.name for s in response.sources}
     assert "local_files" in names
+    assert "google_drive" in names
+    assert "notion" in names

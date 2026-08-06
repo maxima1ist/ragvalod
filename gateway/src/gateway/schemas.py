@@ -46,3 +46,39 @@ class SourceInfo(BaseModel):
     name: str
     description: str = ""
     requires_credentials: bool = False
+
+
+class ScheduleSourceSpec(BaseModel):
+    name: str
+    credentials: dict[str, str] = Field(default_factory=dict)
+    options: dict[str, str] = Field(default_factory=dict)
+
+
+class UpsertScheduleRequest(BaseModel):
+    schedule_id: str | None = None
+    name: str = Field(min_length=1)
+    cron: str = Field(min_length=1)
+    enabled: bool = True
+    sources: list[ScheduleSourceSpec] = Field(default_factory=list)
+    all_with_credentials: bool = False
+
+
+class UpsertScheduleResponse(BaseModel):
+    schedule_id: str
+
+
+class ScheduleInfo(BaseModel):
+    schedule_id: str
+    name: str
+    cron: str
+    enabled: bool
+    source_names: list[str] = Field(default_factory=list)
+    all_with_credentials: bool = False
+    last_run_at: str = ""
+    last_job_id: str = ""
+    created_at: str = ""
+    updated_at: str = ""
+
+
+class RunScheduleResponse(BaseModel):
+    job_id: str

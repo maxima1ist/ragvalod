@@ -50,6 +50,26 @@ class IngestionServiceStub:
                 request_serializer=ingestion__pb2.ListSourcesRequest.SerializeToString,
                 response_deserializer=ingestion__pb2.ListSourcesResponse.FromString,
                 _registered_method=True)
+        self.UpsertSchedule = channel.unary_unary(
+                '/ragvalod.ingestion.v1.IngestionService/UpsertSchedule',
+                request_serializer=ingestion__pb2.UpsertScheduleRequest.SerializeToString,
+                response_deserializer=ingestion__pb2.UpsertScheduleResponse.FromString,
+                _registered_method=True)
+        self.ListSchedules = channel.unary_unary(
+                '/ragvalod.ingestion.v1.IngestionService/ListSchedules',
+                request_serializer=ingestion__pb2.ListSchedulesRequest.SerializeToString,
+                response_deserializer=ingestion__pb2.ListSchedulesResponse.FromString,
+                _registered_method=True)
+        self.DeleteSchedule = channel.unary_unary(
+                '/ragvalod.ingestion.v1.IngestionService/DeleteSchedule',
+                request_serializer=ingestion__pb2.DeleteScheduleRequest.SerializeToString,
+                response_deserializer=ingestion__pb2.DeleteScheduleResponse.FromString,
+                _registered_method=True)
+        self.RunSchedule = channel.unary_unary(
+                '/ragvalod.ingestion.v1.IngestionService/RunSchedule',
+                request_serializer=ingestion__pb2.RunScheduleRequest.SerializeToString,
+                response_deserializer=ingestion__pb2.RunScheduleResponse.FromString,
+                _registered_method=True)
 
 
 class IngestionServiceServicer:
@@ -78,6 +98,31 @@ class IngestionServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def UpsertSchedule(self, request, context):
+        """Periodic ingest schedules (credentials encrypted at rest when present).
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListSchedules(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteSchedule(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RunSchedule(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_IngestionServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -95,6 +140,26 @@ def add_IngestionServiceServicer_to_server(servicer, server):
                     servicer.ListSources,
                     request_deserializer=ingestion__pb2.ListSourcesRequest.FromString,
                     response_serializer=ingestion__pb2.ListSourcesResponse.SerializeToString,
+            ),
+            'UpsertSchedule': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpsertSchedule,
+                    request_deserializer=ingestion__pb2.UpsertScheduleRequest.FromString,
+                    response_serializer=ingestion__pb2.UpsertScheduleResponse.SerializeToString,
+            ),
+            'ListSchedules': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListSchedules,
+                    request_deserializer=ingestion__pb2.ListSchedulesRequest.FromString,
+                    response_serializer=ingestion__pb2.ListSchedulesResponse.SerializeToString,
+            ),
+            'DeleteSchedule': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteSchedule,
+                    request_deserializer=ingestion__pb2.DeleteScheduleRequest.FromString,
+                    response_serializer=ingestion__pb2.DeleteScheduleResponse.SerializeToString,
+            ),
+            'RunSchedule': grpc.unary_unary_rpc_method_handler(
+                    servicer.RunSchedule,
+                    request_deserializer=ingestion__pb2.RunScheduleRequest.FromString,
+                    response_serializer=ingestion__pb2.RunScheduleResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -179,6 +244,114 @@ class IngestionService:
             '/ragvalod.ingestion.v1.IngestionService/ListSources',
             ingestion__pb2.ListSourcesRequest.SerializeToString,
             ingestion__pb2.ListSourcesResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UpsertSchedule(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/ragvalod.ingestion.v1.IngestionService/UpsertSchedule',
+            ingestion__pb2.UpsertScheduleRequest.SerializeToString,
+            ingestion__pb2.UpsertScheduleResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListSchedules(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/ragvalod.ingestion.v1.IngestionService/ListSchedules',
+            ingestion__pb2.ListSchedulesRequest.SerializeToString,
+            ingestion__pb2.ListSchedulesResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteSchedule(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/ragvalod.ingestion.v1.IngestionService/DeleteSchedule',
+            ingestion__pb2.DeleteScheduleRequest.SerializeToString,
+            ingestion__pb2.DeleteScheduleResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RunSchedule(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/ragvalod.ingestion.v1.IngestionService/RunSchedule',
+            ingestion__pb2.RunScheduleRequest.SerializeToString,
+            ingestion__pb2.RunScheduleResponse.FromString,
             options,
             channel_credentials,
             insecure,

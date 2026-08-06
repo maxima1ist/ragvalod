@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0fingestion.proto\x12\x15ragvalod.ingestion.v1\"\x88\x02\n\nSourceSpec\x12\x0c\n\x04name\x18\x01 \x01(\t\x12G\n\x0b\x63redentials\x18\x02 \x03(\x0b\x32\x32.ragvalod.ingestion.v1.SourceSpec.CredentialsEntry\x12?\n\x07options\x18\x03 \x03(\x0b\x32..ragvalod.ingestion.v1.SourceSpec.OptionsEntry\x1a\x32\n\x10\x43redentialsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a.\n\x0cOptionsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"h\n\x14TriggerIngestRequest\x12\x32\n\x07sources\x18\x01 \x03(\x0b\x32!.ragvalod.ingestion.v1.SourceSpec\x12\x1c\n\x14\x61ll_with_credentials\x18\x02 \x01(\x08\"\'\n\x15TriggerIngestResponse\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"\xb1\x01\n\x0fSourceJobStatus\x12\x13\n\x0bsource_name\x18\x01 \x01(\t\x12\x34\n\x05state\x18\x02 \x01(\x0e\x32%.ragvalod.ingestion.v1.SourceJobState\x12\x0f\n\x07message\x18\x03 \x01(\t\x12\x1b\n\x13\x64ocuments_processed\x18\x04 \x01(\x05\x12\x16\n\x0e\x63hunks_written\x18\x05 \x01(\x05\x12\r\n\x05\x65rror\x18\x06 \x01(\t\"%\n\x13GetJobStatusRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"\xc9\x01\n\x14GetJobStatusResponse\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12.\n\x05state\x18\x02 \x01(\x0e\x32\x1f.ragvalod.ingestion.v1.JobState\x12\x0f\n\x07message\x18\x03 \x01(\t\x12\x37\n\x07sources\x18\x04 \x03(\x0b\x32&.ragvalod.ingestion.v1.SourceJobStatus\x12\x12\n\nstarted_at\x18\x05 \x01(\t\x12\x13\n\x0b\x66inished_at\x18\x06 \x01(\t\"\x14\n\x12ListSourcesRequest\"M\n\nSourceInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x1c\n\x14requires_credentials\x18\x03 \x01(\x08\"I\n\x13ListSourcesResponse\x12\x32\n\x07sources\x18\x01 \x03(\x0b\x32!.ragvalod.ingestion.v1.SourceInfo*\x99\x01\n\x08JobState\x12\x19\n\x15JOB_STATE_UNSPECIFIED\x10\x00\x12\x15\n\x11JOB_STATE_PENDING\x10\x01\x12\x15\n\x11JOB_STATE_RUNNING\x10\x02\x12\x17\n\x13JOB_STATE_SUCCEEDED\x10\x03\x12\x14\n\x10JOB_STATE_FAILED\x10\x04\x12\x15\n\x11JOB_STATE_PARTIAL\x10\x05*\xc9\x01\n\x0eSourceJobState\x12 \n\x1cSOURCE_JOB_STATE_UNSPECIFIED\x10\x00\x12\x1c\n\x18SOURCE_JOB_STATE_PENDING\x10\x01\x12\x1c\n\x18SOURCE_JOB_STATE_RUNNING\x10\x02\x12\x1e\n\x1aSOURCE_JOB_STATE_SUCCEEDED\x10\x03\x12\x1b\n\x17SOURCE_JOB_STATE_FAILED\x10\x04\x12\x1c\n\x18SOURCE_JOB_STATE_SKIPPED\x10\x05\x32\xcd\x02\n\x10IngestionService\x12j\n\rTriggerIngest\x12+.ragvalod.ingestion.v1.TriggerIngestRequest\x1a,.ragvalod.ingestion.v1.TriggerIngestResponse\x12g\n\x0cGetJobStatus\x12*.ragvalod.ingestion.v1.GetJobStatusRequest\x1a+.ragvalod.ingestion.v1.GetJobStatusResponse\x12\x64\n\x0bListSources\x12).ragvalod.ingestion.v1.ListSourcesRequest\x1a*.ragvalod.ingestion.v1.ListSourcesResponseB\x03\x90\x01\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0fingestion.proto\x12\x15ragvalod.ingestion.v1\"\x88\x02\n\nSourceSpec\x12\x0c\n\x04name\x18\x01 \x01(\t\x12G\n\x0b\x63redentials\x18\x02 \x03(\x0b\x32\x32.ragvalod.ingestion.v1.SourceSpec.CredentialsEntry\x12?\n\x07options\x18\x03 \x03(\x0b\x32..ragvalod.ingestion.v1.SourceSpec.OptionsEntry\x1a\x32\n\x10\x43redentialsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a.\n\x0cOptionsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"h\n\x14TriggerIngestRequest\x12\x32\n\x07sources\x18\x01 \x03(\x0b\x32!.ragvalod.ingestion.v1.SourceSpec\x12\x1c\n\x14\x61ll_with_credentials\x18\x02 \x01(\x08\"\'\n\x15TriggerIngestResponse\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"\xb1\x01\n\x0fSourceJobStatus\x12\x13\n\x0bsource_name\x18\x01 \x01(\t\x12\x34\n\x05state\x18\x02 \x01(\x0e\x32%.ragvalod.ingestion.v1.SourceJobState\x12\x0f\n\x07message\x18\x03 \x01(\t\x12\x1b\n\x13\x64ocuments_processed\x18\x04 \x01(\x05\x12\x16\n\x0e\x63hunks_written\x18\x05 \x01(\x05\x12\r\n\x05\x65rror\x18\x06 \x01(\t\"%\n\x13GetJobStatusRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"\xc9\x01\n\x14GetJobStatusResponse\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12.\n\x05state\x18\x02 \x01(\x0e\x32\x1f.ragvalod.ingestion.v1.JobState\x12\x0f\n\x07message\x18\x03 \x01(\t\x12\x37\n\x07sources\x18\x04 \x03(\x0b\x32&.ragvalod.ingestion.v1.SourceJobStatus\x12\x12\n\nstarted_at\x18\x05 \x01(\t\x12\x13\n\x0b\x66inished_at\x18\x06 \x01(\t\"\x14\n\x12ListSourcesRequest\"M\n\nSourceInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x1c\n\x14requires_credentials\x18\x03 \x01(\x08\"I\n\x13ListSourcesResponse\x12\x32\n\x07sources\x18\x01 \x03(\x0b\x32!.ragvalod.ingestion.v1.SourceInfo\"\xab\x01\n\x15UpsertScheduleRequest\x12\x13\n\x0bschedule_id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0c\n\x04\x63ron\x18\x03 \x01(\t\x12\x0f\n\x07\x65nabled\x18\x04 \x01(\x08\x12\x32\n\x07sources\x18\x05 \x03(\x0b\x32!.ragvalod.ingestion.v1.SourceSpec\x12\x1c\n\x14\x61ll_with_credentials\x18\x06 \x01(\x08\"-\n\x16UpsertScheduleResponse\x12\x13\n\x0bschedule_id\x18\x01 \x01(\t\"\x16\n\x14ListSchedulesRequest\"\xd6\x01\n\x0cScheduleInfo\x12\x13\n\x0bschedule_id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0c\n\x04\x63ron\x18\x03 \x01(\t\x12\x0f\n\x07\x65nabled\x18\x04 \x01(\x08\x12\x14\n\x0csource_names\x18\x05 \x03(\t\x12\x1c\n\x14\x61ll_with_credentials\x18\x06 \x01(\x08\x12\x13\n\x0blast_run_at\x18\x07 \x01(\t\x12\x13\n\x0blast_job_id\x18\x08 \x01(\t\x12\x12\n\ncreated_at\x18\t \x01(\t\x12\x12\n\nupdated_at\x18\n \x01(\t\"O\n\x15ListSchedulesResponse\x12\x36\n\tschedules\x18\x01 \x03(\x0b\x32#.ragvalod.ingestion.v1.ScheduleInfo\",\n\x15\x44\x65leteScheduleRequest\x12\x13\n\x0bschedule_id\x18\x01 \x01(\t\"\x18\n\x16\x44\x65leteScheduleResponse\")\n\x12RunScheduleRequest\x12\x13\n\x0bschedule_id\x18\x01 \x01(\t\"%\n\x13RunScheduleResponse\x12\x0e\n\x06job_id\x18\x01 \x01(\t*\x99\x01\n\x08JobState\x12\x19\n\x15JOB_STATE_UNSPECIFIED\x10\x00\x12\x15\n\x11JOB_STATE_PENDING\x10\x01\x12\x15\n\x11JOB_STATE_RUNNING\x10\x02\x12\x17\n\x13JOB_STATE_SUCCEEDED\x10\x03\x12\x14\n\x10JOB_STATE_FAILED\x10\x04\x12\x15\n\x11JOB_STATE_PARTIAL\x10\x05*\xc9\x01\n\x0eSourceJobState\x12 \n\x1cSOURCE_JOB_STATE_UNSPECIFIED\x10\x00\x12\x1c\n\x18SOURCE_JOB_STATE_PENDING\x10\x01\x12\x1c\n\x18SOURCE_JOB_STATE_RUNNING\x10\x02\x12\x1e\n\x1aSOURCE_JOB_STATE_SUCCEEDED\x10\x03\x12\x1b\n\x17SOURCE_JOB_STATE_FAILED\x10\x04\x12\x1c\n\x18SOURCE_JOB_STATE_SKIPPED\x10\x05\x32\xfd\x05\n\x10IngestionService\x12j\n\rTriggerIngest\x12+.ragvalod.ingestion.v1.TriggerIngestRequest\x1a,.ragvalod.ingestion.v1.TriggerIngestResponse\x12g\n\x0cGetJobStatus\x12*.ragvalod.ingestion.v1.GetJobStatusRequest\x1a+.ragvalod.ingestion.v1.GetJobStatusResponse\x12\x64\n\x0bListSources\x12).ragvalod.ingestion.v1.ListSourcesRequest\x1a*.ragvalod.ingestion.v1.ListSourcesResponse\x12m\n\x0eUpsertSchedule\x12,.ragvalod.ingestion.v1.UpsertScheduleRequest\x1a-.ragvalod.ingestion.v1.UpsertScheduleResponse\x12j\n\rListSchedules\x12+.ragvalod.ingestion.v1.ListSchedulesRequest\x1a,.ragvalod.ingestion.v1.ListSchedulesResponse\x12m\n\x0e\x44\x65leteSchedule\x12,.ragvalod.ingestion.v1.DeleteScheduleRequest\x1a-.ragvalod.ingestion.v1.DeleteScheduleResponse\x12\x64\n\x0bRunSchedule\x12).ragvalod.ingestion.v1.RunScheduleRequest\x1a*.ragvalod.ingestion.v1.RunScheduleResponseB\x03\x90\x01\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,10 +36,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_SOURCESPEC_CREDENTIALSENTRY']._serialized_options = b'8\001'
   _globals['_SOURCESPEC_OPTIONSENTRY']._loaded_options = None
   _globals['_SOURCESPEC_OPTIONSENTRY']._serialized_options = b'8\001'
-  _globals['_JOBSTATE']._serialized_start=1056
-  _globals['_JOBSTATE']._serialized_end=1209
-  _globals['_SOURCEJOBSTATE']._serialized_start=1212
-  _globals['_SOURCEJOBSTATE']._serialized_end=1413
+  _globals['_JOBSTATE']._serialized_start=1753
+  _globals['_JOBSTATE']._serialized_end=1906
+  _globals['_SOURCEJOBSTATE']._serialized_start=1909
+  _globals['_SOURCEJOBSTATE']._serialized_end=2110
   _globals['_SOURCESPEC']._serialized_start=43
   _globals['_SOURCESPEC']._serialized_end=307
   _globals['_SOURCESPEC_CREDENTIALSENTRY']._serialized_start=209
@@ -62,6 +62,24 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_SOURCEINFO']._serialized_end=978
   _globals['_LISTSOURCESRESPONSE']._serialized_start=980
   _globals['_LISTSOURCESRESPONSE']._serialized_end=1053
-  _globals['_INGESTIONSERVICE']._serialized_start=1416
-  _globals['_INGESTIONSERVICE']._serialized_end=1749
+  _globals['_UPSERTSCHEDULEREQUEST']._serialized_start=1056
+  _globals['_UPSERTSCHEDULEREQUEST']._serialized_end=1227
+  _globals['_UPSERTSCHEDULERESPONSE']._serialized_start=1229
+  _globals['_UPSERTSCHEDULERESPONSE']._serialized_end=1274
+  _globals['_LISTSCHEDULESREQUEST']._serialized_start=1276
+  _globals['_LISTSCHEDULESREQUEST']._serialized_end=1298
+  _globals['_SCHEDULEINFO']._serialized_start=1301
+  _globals['_SCHEDULEINFO']._serialized_end=1515
+  _globals['_LISTSCHEDULESRESPONSE']._serialized_start=1517
+  _globals['_LISTSCHEDULESRESPONSE']._serialized_end=1596
+  _globals['_DELETESCHEDULEREQUEST']._serialized_start=1598
+  _globals['_DELETESCHEDULEREQUEST']._serialized_end=1642
+  _globals['_DELETESCHEDULERESPONSE']._serialized_start=1644
+  _globals['_DELETESCHEDULERESPONSE']._serialized_end=1668
+  _globals['_RUNSCHEDULEREQUEST']._serialized_start=1670
+  _globals['_RUNSCHEDULEREQUEST']._serialized_end=1711
+  _globals['_RUNSCHEDULERESPONSE']._serialized_start=1713
+  _globals['_RUNSCHEDULERESPONSE']._serialized_end=1750
+  _globals['_INGESTIONSERVICE']._serialized_start=2113
+  _globals['_INGESTIONSERVICE']._serialized_end=2878
 # @@protoc_insertion_point(module_scope)

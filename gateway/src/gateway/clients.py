@@ -87,6 +87,62 @@ class IngestionClient:
                 ],
             }
 
+    async def upsert_schedule(self, body: dict[str, Any]) -> str:
+        specs = [
+            ingestion_pb2.SourceSpec(
+                name=s["name"],
+                credentials=s.get("credentials") or {},
+                options=s.get("options") or {},
+            )
+            for s in (body.get("sources") or [])
+        ]
+        async with grpc.aio.insecure_channel(self._addr) as channel:
+            stub = ingestion_pb2_grpc.IngestionServiceStub(channel)
+            response = await stub.UpsertSchedule(
+                ingestion_pb2.UpsertScheduleRequest(
+                    schedule_id=body.get("schedule_id") or "",
+                    name=body["name"],
+                    cron=body["cron"],
+                    enabled=bool(body.get("enabled", True)),
+                    sources=specs,
+                    all_with_credentials=bool(body.get("all_with_credentials", False)),
+                )
+            )
+            return response.schedule_id
+
+    async def list_schedules(self) -> list[dict[str, Any]]:
+        async with grpc.aio.insecure_channel(self._addr) as channel:
+            stub = ingestion_pb2_grpc.IngestionServiceStub(channel)
+            response = await stub.ListSchedules(ingestion_pb2.ListSchedulesRequest())
+            return [
+                {
+                    "schedule_id": s.schedule_id,
+                    "name": s.name,
+                    "cron": s.cron,
+                    "enabled": s.enabled,
+                    "source_names": list(s.source_names),
+                    "all_with_credentials": s.all_with_credentials,
+                    "last_run_at": s.last_run_at,
+                    "last_job_id": s.last_job_id,
+                    "created_at": s.created_at,
+                    "updated_at": s.updated_at,
+                }
+                for s in response.schedules
+            ]
+
+    async def delete_schedule(self, schedule_id: str) -> None:
+        async with grpc.aio.insecure_channel(self._addr) as channel:
+            stub = ingestion_pb2_grpc.IngestionServiceStub(channel)
+            await stub.DeleteSchedule(ingestion_pb2.DeleteScheduleRequest(schedule_id=schedule_id))
+
+    async def run_schedule(self, schedule_id: str) -> str:
+        async with grpc.aio.insecure_channel(self._addr) as channel:
+            stub = ingestion_pb2_grpc.IngestionServiceStub(channel)
+            response = await stub.RunSchedule(
+                ingestion_pb2.RunScheduleRequest(schedule_id=schedule_id)
+            )
+            return response.job_id
+
 
 class RagClient:
     def __init__(self, addr: str) -> None:

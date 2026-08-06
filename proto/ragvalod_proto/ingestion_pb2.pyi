@@ -132,3 +132,81 @@ class ListSourcesResponse(_message.Message):
     SOURCES_FIELD_NUMBER: _ClassVar[int]
     sources: _containers.RepeatedCompositeFieldContainer[SourceInfo]
     def __init__(self, sources: _Optional[_Iterable[_Union[SourceInfo, _Mapping]]] = ...) -> None: ...
+
+class UpsertScheduleRequest(_message.Message):
+    __slots__ = ("schedule_id", "name", "cron", "enabled", "sources", "all_with_credentials")
+    SCHEDULE_ID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    CRON_FIELD_NUMBER: _ClassVar[int]
+    ENABLED_FIELD_NUMBER: _ClassVar[int]
+    SOURCES_FIELD_NUMBER: _ClassVar[int]
+    ALL_WITH_CREDENTIALS_FIELD_NUMBER: _ClassVar[int]
+    schedule_id: str
+    name: str
+    cron: str
+    enabled: bool
+    sources: _containers.RepeatedCompositeFieldContainer[SourceSpec]
+    all_with_credentials: bool
+    def __init__(self, schedule_id: _Optional[str] = ..., name: _Optional[str] = ..., cron: _Optional[str] = ..., enabled: _Optional[bool] = ..., sources: _Optional[_Iterable[_Union[SourceSpec, _Mapping]]] = ..., all_with_credentials: _Optional[bool] = ...) -> None: ...
+
+class UpsertScheduleResponse(_message.Message):
+    __slots__ = ("schedule_id",)
+    SCHEDULE_ID_FIELD_NUMBER: _ClassVar[int]
+    schedule_id: str
+    def __init__(self, schedule_id: _Optional[str] = ...) -> None: ...
+
+class ListSchedulesRequest(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class ScheduleInfo(_message.Message):
+    __slots__ = ("schedule_id", "name", "cron", "enabled", "source_names", "all_with_credentials", "last_run_at", "last_job_id", "created_at", "updated_at")
+    SCHEDULE_ID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    CRON_FIELD_NUMBER: _ClassVar[int]
+    ENABLED_FIELD_NUMBER: _ClassVar[int]
+    SOURCE_NAMES_FIELD_NUMBER: _ClassVar[int]
+    ALL_WITH_CREDENTIALS_FIELD_NUMBER: _ClassVar[int]
+    LAST_RUN_AT_FIELD_NUMBER: _ClassVar[int]
+    LAST_JOB_ID_FIELD_NUMBER: _ClassVar[int]
+    CREATED_AT_FIELD_NUMBER: _ClassVar[int]
+    UPDATED_AT_FIELD_NUMBER: _ClassVar[int]
+    schedule_id: str
+    name: str
+    cron: str
+    enabled: bool
+    source_names: _containers.RepeatedScalarFieldContainer[str]
+    all_with_credentials: bool
+    last_run_at: str
+    last_job_id: str
+    created_at: str
+    updated_at: str
+    def __init__(self, schedule_id: _Optional[str] = ..., name: _Optional[str] = ..., cron: _Optional[str] = ..., enabled: _Optional[bool] = ..., source_names: _Optional[_Iterable[str]] = ..., all_with_credentials: _Optional[bool] = ..., last_run_at: _Optional[str] = ..., last_job_id: _Optional[str] = ..., created_at: _Optional[str] = ..., updated_at: _Optional[str] = ...) -> None: ...
+
+class ListSchedulesResponse(_message.Message):
+    __slots__ = ("schedules",)
+    SCHEDULES_FIELD_NUMBER: _ClassVar[int]
+    schedules: _containers.RepeatedCompositeFieldContainer[ScheduleInfo]
+    def __init__(self, schedules: _Optional[_Iterable[_Union[ScheduleInfo, _Mapping]]] = ...) -> None: ...
+
+class DeleteScheduleRequest(_message.Message):
+    __slots__ = ("schedule_id",)
+    SCHEDULE_ID_FIELD_NUMBER: _ClassVar[int]
+    schedule_id: str
+    def __init__(self, schedule_id: _Optional[str] = ...) -> None: ...
+
+class DeleteScheduleResponse(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class RunScheduleRequest(_message.Message):
+    __slots__ = ("schedule_id",)
+    SCHEDULE_ID_FIELD_NUMBER: _ClassVar[int]
+    schedule_id: str
+    def __init__(self, schedule_id: _Optional[str] = ...) -> None: ...
+
+class RunScheduleResponse(_message.Message):
+    __slots__ = ("job_id",)
+    JOB_ID_FIELD_NUMBER: _ClassVar[int]
+    job_id: str
+    def __init__(self, job_id: _Optional[str] = ...) -> None: ...

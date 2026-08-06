@@ -15,12 +15,19 @@ service IngestionService {
 
   // List registered data-source adapters.
   rpc ListSources(ListSourcesRequest) returns (ListSourcesResponse);
+
+  // Periodic ingest schedules (credentials encrypted at rest when present).
+  rpc UpsertSchedule(UpsertScheduleRequest) returns (UpsertScheduleResponse);
+  rpc ListSchedules(ListSchedulesRequest) returns (ListSchedulesResponse);
+  rpc DeleteSchedule(DeleteScheduleRequest) returns (DeleteScheduleResponse);
+  rpc RunSchedule(RunScheduleRequest) returns (RunScheduleResponse);
 }
 
 message SourceSpec {
-  // Adapter name, e.g. "local_files", "notion".
+  // Adapter name, e.g. "local_files", "notion", "google_drive".
   string name = 1;
-  // Opaque credentials for this source (token, API key, etc.). Never persisted in v1.
+  // Opaque credentials for this source (token, API key, etc.).
+  // One-shot ingest: in-memory only. Schedules: Fernet-encrypted at rest.
   map<string, string> credentials = 2;
   // Source-specific options (paths, filters, etc.).
   map<string, string> options = 3;
@@ -90,4 +97,53 @@ message SourceInfo {
 
 message ListSourcesResponse {
   repeated SourceInfo sources = 1;
+}
+
+message UpsertScheduleRequest {
+  // Empty schedule_id creates a new schedule; non-empty updates an existing one.
+  string schedule_id = 1;
+  string name = 2;
+  // 5-field cron: minute hour day month day_of_week (APScheduler/crontab).
+  string cron = 3;
+  bool enabled = 4;
+  repeated SourceSpec sources = 5;
+  bool all_with_credentials = 6;
+}
+
+message UpsertScheduleResponse {
+  string schedule_id = 1;
+}
+
+message ListSchedulesRequest {}
+
+message ScheduleInfo {
+  string schedule_id = 1;
+  string name = 2;
+  string cron = 3;
+  bool enabled = 4;
+  // Source adapter names only — credentials are never returned.
+  repeated string source_names = 5;
+  bool all_with_credentials = 6;
+  string last_run_at = 7;
+  string last_job_id = 8;
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+message ListSchedulesResponse {
+  repeated ScheduleInfo schedules = 1;
+}
+
+message DeleteScheduleRequest {
+  string schedule_id = 1;
+}
+
+message DeleteScheduleResponse {}
+
+message RunScheduleRequest {
+  string schedule_id = 1;
+}
+
+message RunScheduleResponse {
+  string job_id = 1;
 }

@@ -176,6 +176,27 @@ Useful `options` (all strings):
 
 After a full success, `GET /health` shows `data_initialized: true` and you can call `POST /generate`.
 
+### Scheduled ingest
+
+Periodic ingest lives in the Ingestion Service (APScheduler). Credentials on schedules are **Fernet-encrypted at rest** (`INGESTION_CREDENTIALS_ENCRYPTION_KEY` in `.env`). One-shot `POST /ingest` still keeps creds in memory only.
+
+```bash
+# Create (5-field cron: min hour day month dow)
+curl -s -X POST http://localhost:8000/schedules \
+  -H "X-API-Key: change-me" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "local-daily",
+    "cron": "0 3 * * *",
+    "enabled": true,
+    "sources": [{"name": "local_files", "options": {"path": "/data/local_files"}}]
+  }'
+
+curl -s -H "X-API-Key: change-me" http://localhost:8000/schedules
+curl -s -X POST -H "X-API-Key: change-me" http://localhost:8000/schedules/<id>/run
+curl -s -X DELETE -H "X-API-Key: change-me" http://localhost:8000/schedules/<id>
+```
+
 ### Clear the vector DB
 
 Deletes the Qdrant collection `documents` (chunks + ingest markers). Stack stays up.

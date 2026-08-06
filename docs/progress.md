@@ -123,8 +123,8 @@
 ## Этап 10: Расширение источников и автоматизация ингеста — IN PROGRESS
 
 - [x] **Шаг 10.1:** Адаптер Google Drive на ридере `llama-index-readers-google` (и далее прочие источники) — DONE 2026-08-06: `sources/google_drive.py` + factory; credentials `service_account_key`/`authorized_user_info`/`service_account_key_path`; options `folder_id`/`file_ids`/`query`/`drive_id`. Unit-тесты мок-ридера + factory. Live Drive — по наличию SA ключа у пользователя.
-- [~] **Шаг 10.2:** Периодический ингест + шифрованное хранение кредов at rest — IN PROGRESS
-- [ ] **Шаг 10.3:** Дедупликация и удаление через `IngestionPipeline` LlamaIndex (docstore + хэши) — TODO
+- [x] **Шаг 10.2:** Периодический ингест + шифрованное хранение кредов at rest — DONE 2026-08-06: Fernet (`credentials_crypto.py`), `ScheduleStore` + APScheduler, gRPC Upsert/List/Delete/RunSchedule, Gateway `POST/GET/DELETE /schedules` + `/run`; volume `ingestion_data`; креды в JSON только ciphertext. Unit + gateway tests.
+- [~] **Шаг 10.3:** Дедупликация и удаление через `IngestionPipeline` LlamaIndex (docstore + хэши) — IN PROGRESS
 
 ## Этап 11: Оптимизация и Kubernetes — TODO
 

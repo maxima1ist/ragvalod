@@ -138,3 +138,59 @@ def test_ingest_and_sources(client: TestClient) -> None:
         status = client.get("/ingest/job-1", headers={"X-API-Key": "test-key"})
         assert status.status_code == 200
         assert status.json()["state"] == "succeeded"
+
+
+def test_schedules_crud(client: TestClient) -> None:
+    with (
+        patch(
+            "gateway.main.ingestion.upsert_schedule",
+            new=AsyncMock(return_value="sched-1"),
+        ),
+        patch(
+            "gateway.main.ingestion.list_schedules",
+            new=AsyncMock(
+                return_value=[
+                    {
+                        "schedule_id": "sched-1",
+                        "name": "local-daily",
+                        "cron": "0 3 * * *",
+                        "enabled": True,
+                        "source_names": ["local_files"],
+                        "all_with_credentials": False,
+                        "last_run_at": "",
+                        "last_job_id": "",
+                        "created_at": "t0",
+                        "updated_at": "t0",
+                    }
+                ]
+            ),
+        ),
+        patch("gateway.main.ingestion.delete_schedule", new=AsyncMock()),
+        patch(
+            "gateway.main.ingestion.run_schedule",
+            new=AsyncMock(return_value="job-99"),
+        ),
+    ):
+        created = client.post(
+            "/schedules",
+            headers={"X-API-Key": "test-key"},
+            json={
+                "name": "local-daily",
+                "cron": "0 3 * * *",
+                "sources": [{"name": "local_files"}],
+            },
+        )
+        assert created.status_code == 200
+        assert created.json()["schedule_id"] == "sched-1"
+
+        listed = client.get("/schedules", headers={"X-API-Key": "test-key"})
+        assert listed.status_code == 200
+        assert listed.json()["schedules"][0]["name"] == "local-daily"
+
+        run = client.post("/schedules/sched-1/run", headers={"X-API-Key": "test-key"})
+        assert run.status_code == 200
+        assert run.json()["job_id"] == "job-99"
+
+        deleted = client.delete("/schedules/sched-1", headers={"X-API-Key": "test-key"})
+        assert deleted.status_code == 200
+        assert deleted.json()["status"] == "deleted"

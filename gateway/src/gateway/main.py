@@ -20,7 +20,11 @@ from gateway.schemas import (
     GenerateResponse,
     IngestRequest,
     IngestResponse,
+    RunScheduleResponse,
+    ScheduleInfo,
     SourceInfo,
+    UpsertScheduleRequest,
+    UpsertScheduleResponse,
     UsedChunk,
 )
 
@@ -112,6 +116,50 @@ async def get_ingest_job(job_id: str) -> dict:
         return await ingestion.get_job_status(job_id)
     except grpc.aio.AioRpcError as exc:
         raise_from_grpc(exc)
+
+
+@app.post("/schedules", dependencies=[Depends(require_api_key)])
+async def upsert_schedule(body: UpsertScheduleRequest) -> UpsertScheduleResponse:
+    if not body.sources and not body.all_with_credentials:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "invalid_argument",
+                "message": "sources or all_with_credentials required",
+            },
+        )
+    try:
+        schedule_id = await ingestion.upsert_schedule(body.model_dump())
+    except grpc.aio.AioRpcError as exc:
+        raise_from_grpc(exc)
+    return UpsertScheduleResponse(schedule_id=schedule_id)
+
+
+@app.get("/schedules", dependencies=[Depends(require_api_key)])
+async def list_schedules() -> dict[str, list[ScheduleInfo]]:
+    try:
+        rows = await ingestion.list_schedules()
+    except grpc.aio.AioRpcError as exc:
+        raise_from_grpc(exc)
+    return {"schedules": [ScheduleInfo(**row) for row in rows]}
+
+
+@app.delete("/schedules/{schedule_id}", dependencies=[Depends(require_api_key)])
+async def delete_schedule(schedule_id: str) -> dict[str, str]:
+    try:
+        await ingestion.delete_schedule(schedule_id)
+    except grpc.aio.AioRpcError as exc:
+        raise_from_grpc(exc)
+    return {"status": "deleted", "schedule_id": schedule_id}
+
+
+@app.post("/schedules/{schedule_id}/run", dependencies=[Depends(require_api_key)])
+async def run_schedule(schedule_id: str) -> RunScheduleResponse:
+    try:
+        job_id = await ingestion.run_schedule(schedule_id)
+    except grpc.aio.AioRpcError as exc:
+        raise_from_grpc(exc)
+    return RunScheduleResponse(job_id=job_id)
 
 
 @app.post("/generate", dependencies=[Depends(require_api_key)])
