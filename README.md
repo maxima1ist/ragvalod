@@ -46,6 +46,8 @@ Tear down (keeps volumes): `make down`.
 | Langfuse UI (profile `monitoring`) | http://localhost:3000 |
 | vLLM (profile `local-llm`) | http://localhost:8001 |
 
+Langfuse default login (compose seed): `admin@ragvalod.local` / `ragvalod-admin`.
+
 Auth on Gateway: header `X-API-Key: <GATEWAY_API_KEY>` (or `Authorization: Bearer …`). Empty key disables auth.
 
 The stack starts **empty**. Until a successful ingest, `POST /generate` returns HTTP 409 (`data_not_initialized`). Check readiness via `GET /health` → `data_initialized`.
