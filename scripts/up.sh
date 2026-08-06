@@ -17,5 +17,6 @@ else
   DOCKER=(sudo docker)
 fi
 
-"${DOCKER[@]}" compose up -d --build "$@"
-"${DOCKER[@]}" compose ps
+# Profiles must precede the subcommand: compose --profile X up …
+"${DOCKER[@]}" compose "$@" up -d --build
+"${DOCKER[@]}" compose "$@" ps
