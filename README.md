@@ -25,11 +25,11 @@ cp .env.example .env
 
 # 3. Put files to ingest under data/local_files/ (sample welcome.md is already there)
 
-# 4. Start
+# 4. Start (profiles can be combined)
 make up                 # base stack
-# or:
-make up-local-llm       # base + vLLM (profile local-llm)
-make up-monitoring      # base + Langfuse (profile monitoring)
+make up-local-llm       # base + vLLM
+make up-monitoring      # base + Langfuse
+make up-all             # base + vLLM + Langfuse
 
 # 5. Smoke: health → ingest local files → generate
 uv sync --all-packages --group dev   # once, for host-side scripts
@@ -202,6 +202,7 @@ make sync              # uv sync --all-packages --group dev
 make up                # docker compose up -d --build
 make up-local-llm      # + profile local-llm
 make up-monitoring     # + profile monitoring
+make up-all            # + local-llm + monitoring
 make down              # stop all profiles
 make test / make lint
 make smoke-qdrant | smoke-litellm | smoke-langfuse

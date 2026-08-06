@@ -1,7 +1,7 @@
-.PHONY: help sync protos lint test smoke-qdrant smoke-litellm smoke-langfuse bench-local-llm up up-local-llm up-monitoring down
+.PHONY: help sync protos lint test smoke-qdrant smoke-litellm smoke-langfuse bench-local-llm up up-local-llm up-monitoring up-all down
 
 help:
-	@echo "Targets: sync | protos | lint | test | smoke-qdrant | smoke-litellm | smoke-langfuse | bench-local-llm | up | up-local-llm | up-monitoring | down"
+	@echo "Targets: sync | protos | lint | test | smoke-qdrant | smoke-litellm | smoke-langfuse | bench-local-llm | up | up-local-llm | up-monitoring | up-all | down"
 
 sync:
 	uv sync --all-packages --group dev
@@ -40,6 +40,9 @@ up-local-llm:
 
 up-monitoring:
 	bash scripts/up.sh --profile monitoring
+
+up-all:
+	bash scripts/up.sh --profile local-llm --profile monitoring
 
 down:
 	bash scripts/down.sh
