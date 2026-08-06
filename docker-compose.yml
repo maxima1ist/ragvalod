@@ -72,12 +72,14 @@ services:
       INGESTION_QDRANT_GRPC_PORT: "6334"
       INGESTION_LITELLM_BASE_URL: "http://litellm:4000"
       INGESTION_LITELLM_API_KEY: ${LITELLM_MASTER_KEY:-sk-ragvalod-local}
+      # Default corpus for real usage (host ./data). Smoke corpus is /test_data.
       INGESTION_LOCAL_FILES_DIR: "/data/local_files"
       INGESTION_EMBEDDING_MODEL_ALIAS: "embedder-default"
       INGESTION_EMBEDDING_MODEL_NAME: "intfloat/multilingual-e5-small"
       INGESTION_EMBEDDING_DOC_PREFIX: "passage: "
     volumes:
-      - ${LOCAL_FILES_DIR:-./data/local_files}:/data/local_files:ro
+      - ${LOCAL_FILES_DIR:-./data}:/data/local_files:ro
+      - ./test_data:/test_data:ro
     depends_on:
       qdrant:
         condition: service_healthy

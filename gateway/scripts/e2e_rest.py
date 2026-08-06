@@ -24,6 +24,11 @@ def main() -> int:
         "--query",
         default="What is Markus Vileika's badge code, and which drawer may only he open?",
     )
+    parser.add_argument(
+        "--local-files-path",
+        default=os.environ.get("E2E_LOCAL_FILES_PATH", "/test_data"),
+        help="Container path for local_files ingest (smoke corpus default: /test_data)",
+    )
     parser.add_argument("--skip-ingest", action="store_true")
     args = parser.parse_args()
 
@@ -41,7 +46,14 @@ def main() -> int:
             ingest = client.post(
                 "/ingest",
                 headers=headers,
-                json={"sources": [{"name": "local_files"}]},
+                json={
+                    "sources": [
+                        {
+                            "name": "local_files",
+                            "options": {"path": args.local_files_path},
+                        }
+                    ]
+                },
             )
             ingest.raise_for_status()
             job_id = ingest.json()["job_id"]
