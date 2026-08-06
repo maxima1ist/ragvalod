@@ -22,7 +22,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--query",
-        default="What is the serial of Skrygalov-amber and who may move it?",
+        default="What is Markus Vileika's badge code, and which drawer may only he open?",
     )
     parser.add_argument("--skip-ingest", action="store_true")
     args = parser.parse_args()
@@ -70,7 +70,7 @@ def main() -> int:
         if gen.status_code != 200:
             return 1
         answer = gen.json()["answer"]
-        if "RGV-2026-B7-8814" not in answer and "Miroslava" not in answer:
+        if "RGV-SMOKE-7F3A9C21" not in answer and "C-17" not in answer:
             print("WARN: expected smoke fact missing from answer", file=sys.stderr)
             return 2
         return 0
