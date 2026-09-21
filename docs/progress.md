@@ -132,14 +132,12 @@
 > **Google Drive live ingest не проверялся** (только unit-тесты с моком ридера) — вынесено в [TODO.md](./TODO.md).
 > Managed Langfuse LLM-as-a-judge по-прежнему отложен (шаг D.1 после этапа 11).
 
-## Этап 11: Оптимизация и Kubernetes — IN PROGRESS
+## Этап 11: Оптимизация и Kubernetes — DONE
 
 - [x] **Шаг 11.1:** Профилирование и оптимизация узких мест — DONE 2026-09-21: `scripts/profile_rag.py` + `make profile-rag`, `docs/performance_tuning.md`, `configs/litellm.redis.yaml` + compose profile `cache-redis`; env `RAG_DEFAULT_TOP_K`, `INGESTION_CHUNK_*`. pytest + lint OK (live profile — при поднятом стеке).
 - [x] **Шаг 11.2:** Kubernetes-манифесты — DONE 2026-09-21: `k8s/base` (Gateway Ingress, Qdrant StatefulSet+PVC, gRPC Services, vLLM/infinity/litellm); `make k8s-validate`, `scripts/test_k8s_kustomize.py`.
 - [x] **Шаг 11.3:** Горизонтальное масштабирование (Qdrant, реплики, мульти-GPU vLLM) — DONE 2026-09-21: overlay `k8s/overlays/ha` (GW/RAG/LiteLLM×2, Redis+litellm.redis); `qdrant-cluster.md`, `vllm-multigpu.yaml.example`.
 - [x] **Шаг 11.4:** Vault/KMS, Prometheus + Grafana — DONE 2026-09-21: `k8s/examples/sealed-secret.yaml.example`, `external-secrets-vault.md`; overlay `k8s/overlays/observability` (Prometheus+Grafana); monitoring overlay Langfuse.
-
-## Этап 11: Оптимизация и Kubernetes — DONE
 
 ## После этапа 11 (отложено) — TODO
 
