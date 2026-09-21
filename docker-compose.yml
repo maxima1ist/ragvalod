@@ -79,6 +79,8 @@ services:
       INGESTION_EMBEDDING_DOC_PREFIX: "passage: "
       INGESTION_DATA_DIR: "/data/ingestion"
       INGESTION_CREDENTIALS_ENCRYPTION_KEY: ${INGESTION_CREDENTIALS_ENCRYPTION_KEY:-}
+      INGESTION_CHUNK_SIZE: ${INGESTION_CHUNK_SIZE:-512}
+      INGESTION_CHUNK_OVERLAP: ${INGESTION_CHUNK_OVERLAP:-100}
     volumes:
       - ${LOCAL_FILES_DIR:-./data}:/data/local_files:ro
       - ./test_data:/test_data:ro
@@ -128,6 +130,8 @@ services:
       RAG_LANGFUSE_HOST: ${LANGFUSE_HOST:-http://langfuse:3000}
       RAG_LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
       RAG_LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      RAG_DEFAULT_TOP_K: ${RAG_DEFAULT_TOP_K:-50}
+      RAG_DEFAULT_RERANK_TOP_N: ${RAG_DEFAULT_RERANK_TOP_N:-5}
     depends_on:
       qdrant:
         condition: service_healthy
@@ -331,6 +335,22 @@ services:
       timeout: 5s
       retries: 30
       start_period: 60s
+
+  # Optional Redis for LiteLLM response cache (configs/litellm.redis.yaml).
+  # docker compose --profile cache-redis up -d redis
+  redis:
+    image: redis:7-alpine
+    profiles:
+      - cache-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ragvalod
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 networks:
   ragvalod:

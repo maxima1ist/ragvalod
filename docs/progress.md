@@ -132,13 +132,14 @@
 > **Google Drive live ingest не проверялся** (только unit-тесты с моком ридера) — вынесено в [TODO.md](./TODO.md).
 > Managed Langfuse LLM-as-a-judge по-прежнему отложен (шаг D.1 после этапа 11).
 
-## Этап 11: Оптимизация и Kubernetes — TODO
+## Этап 11: Оптимизация и Kubernetes — IN PROGRESS
 
-- [ ] **Шаг 11.1:** Профилирование и оптимизация узких мест — TODO
-- [ ] **Шаг 11.2:** Kubernetes-манифесты — TODO
+- [x] **Шаг 11.1:** Профилирование и оптимизация узких мест — DONE 2026-09-21: `scripts/profile_rag.py` + `make profile-rag`, `docs/performance_tuning.md`, `configs/litellm.redis.yaml` + compose profile `cache-redis`; env `RAG_DEFAULT_TOP_K`, `INGESTION_CHUNK_*`. pytest + lint OK (live profile — при поднятом стеке).
+- [~] **Шаг 11.2:** Kubernetes-манифесты — IN PROGRESS
 - [ ] **Шаг 11.3:** Горизонтальное масштабирование (Qdrant, реплики, мульти-GPU vLLM) — TODO
 - [ ] **Шаг 11.4:** Vault/KMS, Prometheus + Grafana — TODO
 
 ## После этапа 11 (отложено) — TODO
 
 - [ ] **Шаг D.1:** Включить Langfuse LLM-as-a-judge (сейчас недоступен на `langfuse/langfuse:2` / 2.95 OSS) — TODO: апгрейд на Langfuse v3 (где evals/playground в OSS) **или** внешний judge-скрипт через LiteLLM + запись scores в Langfuse API; критерии — `configs/langfuse_judge.yaml` (Ragas: faithfulness, answer_relevancy, context_precision). Project API Keys (`pk-lf-…`) ≠ LLM Connections.
+- [ ] **Шаг D.2:** Google Drive — live ingest через Google API (этап 10.1: адаптер + мок-тесты OK; **реальный вызов Drive не проверялся**) — TODO: service account JSON или OAuth в `POST /ingest`, расшаренная папка/`folder_id`, poll job → `POST /generate` по содержимому; детали — [TODO.md](./TODO.md), README (Google Drive).

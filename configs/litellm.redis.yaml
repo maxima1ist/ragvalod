@@ -1,0 +1,33 @@
+# LiteLLM with Redis-backed response cache (stage 11.1 / multi-replica).
+# Mount instead of litellm.yaml when Redis is available:
+#   volumes:
+#     - ./configs/litellm.redis.yaml:/app/config.yaml:ro
+# Set REDIS_HOST / REDIS_PORT in litellm service environment.
+
+model_list:
+  - model_name: chat-default
+    litellm_params:
+      model: hosted_vllm/Qwen/Qwen2.5-7B-Instruct-AWQ
+      api_base: http://vllm:8000/v1
+      api_key: "none"
+  - model_name: embedder-default
+    litellm_params:
+      model: openai/intfloat/multilingual-e5-small
+      api_base: http://infinity:7997
+      api_key: "none"
+  - model_name: reranker-default
+    litellm_params:
+      model: infinity/BAAI/bge-reranker-v2-m3
+      api_base: http://infinity:7997
+      api_key: "none"
+
+litellm_settings:
+  cache: true
+  cache_params:
+    type: redis
+    host: os.environ/REDIS_HOST
+    port: os.environ/REDIS_PORT
+  request_timeout: 300
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY

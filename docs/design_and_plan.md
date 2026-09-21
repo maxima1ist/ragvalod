@@ -361,7 +361,7 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 
 ### Этап 11: Оптимизация и подготовка к масштабированию (Kubernetes)
 
-**Шаг 11.1:** Профилирование узких мест (поиск, реранкинг, генерация): GPU для реранкера или уменьшение `top_k`, тюнинг встроенного кеша LiteLLM (при масштабировании — Redis-бекенд кеша), при нехватке VRAM — модель меньше (Phi-3-mini) или `max-model-len` 2048. Сюда же — эксперименты с качеством retrieval на метриках этапа 9: semantic chunking (`SemanticSplitterNodeParser`) против structure-aware разбиения из шага 4.4, тюнинг `chunk_size`/`chunk_overlap`.
+**Шаг 11.1:** Профилирование узких мест (поиск, реранкинг, генерация): GPU для реранкера или уменьшение `top_k`, тюнинг встроенного кеша LiteLLM (при масштабировании — Redis-бекенд кеша), при нехватке VRAM — модель меньше (Phi-3-mini) или `max-model-len` 2048. Сюда же — эксперименты с качеством retrieval на метриках этапа 9: semantic chunking (`SemanticSplitterNodeParser`) против structure-aware разбиения из шага 4.4, тюнинг `chunk_size`/`chunk_overlap`. Инструменты: `scripts/profile_rag.py`, `make profile-rag`, рецепт — [performance_tuning.md](./performance_tuning.md); Redis-кеш — `configs/litellm.redis.yaml`, compose-профиль `cache-redis`.
 
 **Шаг 11.2:** Kubernetes-манифесты (Deployment, Service, Ingress для Gateway, PersistentVolume для Qdrant). gRPC-архитектура ложится на K8s естественно (headless services, балансировка gRPC).
 
@@ -374,6 +374,8 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 ### После этапа 11 (отложено)
 
 **Шаг D.1:** Включить рабочий Langfuse LLM-as-a-judge. На текущем `langfuse:2` (2.95 OSS) UI LLM Connections / model-based evals недоступен (entitlement). Варианты: апгрейд на Langfuse v3 (evals/playground в OSS) или внешний judge через LiteLLM + scores API. Рецепт метрик — `configs/langfuse_judge.yaml`. Не путать Project API Keys (`pk-lf-…`, ingest трейсов) с LLM Connections (вызов модели из Langfuse).
+
+**Шаг D.2:** Ручная проверка Google Drive live ingest (10.1 — код и unit-тесты с моком; без live Google API). Service account / OAuth, `folder_id` или `file_ids`, расшаривание на SA email; см. [TODO.md](./TODO.md).
 
 ---
 ## 4. Детали конфигурации и переменные окружения
