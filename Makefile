@@ -1,7 +1,7 @@
-.PHONY: help sync protos lint test smoke-qdrant smoke-litellm smoke-langfuse clear-qdrant bench-local-llm profile-rag up up-local-llm up-monitoring up-all down
+.PHONY: help sync protos lint test smoke-qdrant smoke-litellm smoke-langfuse clear-qdrant bench-local-llm profile-rag k8s-validate up up-local-llm up-monitoring up-all down
 
 help:
-	@echo "Targets: sync | protos | lint | test | smoke-qdrant | smoke-litellm | smoke-langfuse | clear-qdrant | bench-local-llm | profile-rag | up | up-local-llm | up-monitoring | up-all | down"
+	@echo "Targets: sync | protos | lint | test | smoke-qdrant | smoke-litellm | smoke-langfuse | clear-qdrant | bench-local-llm | profile-rag | k8s-validate | up | up-local-llm | up-monitoring | up-all | down"
 
 sync:
 	uv sync --all-packages --group dev
@@ -37,6 +37,12 @@ bench-local-llm:
 
 profile-rag:
 	uv run python scripts/profile_rag.py
+
+k8s-validate:
+	kubectl kustomize k8s/base >/dev/null
+	kubectl kustomize k8s/overlays/ha >/dev/null
+	kubectl kustomize k8s/overlays/monitoring >/dev/null
+	kubectl kustomize k8s/overlays/observability >/dev/null
 
 up:
 	bash scripts/up.sh

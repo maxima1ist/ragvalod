@@ -1,0 +1,27 @@
+# Example: tensor parallelism across 2 GPUs on one pod (heavy models, stage 11.3).
+# Apply manually or merge into kustomization when your nodes have 2+ GPUs.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm
+spec:
+  template:
+    spec:
+      containers:
+        - name: vllm
+          args:
+            - --model
+            - Qwen/Qwen2.5-7B-Instruct-AWQ
+            - --tensor-parallel-size
+            - "2"
+            - --quantization
+            - awq_marlin
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+          resources:
+            limits:
+              nvidia.com/gpu: 2
+            requests:
+              nvidia.com/gpu: 2

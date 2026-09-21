@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinity
+  labels:
+    app: infinity
+spec:
+  ports:
+    - name: http
+      port: 7997
+      targetPort: 7997
+  selector:
+    app: infinity
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: infinity-hf-cache
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinity
+  labels:
+    app: infinity
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infinity
+  template:
+    metadata:
+      labels:
+        app: infinity
+    spec:
+      containers:
+        - name: infinity
+          image: michaelf34/infinity:latest-cpu
+          args:
+            - v2
+            - --engine
+            - torch
+            - --model-id
+            - intfloat/multilingual-e5-small
+            - --model-id
+            - BAAI/bge-reranker-v2-m3
+            - --port
+            - "7997"
+          ports:
+            - containerPort: 7997
+          env:
+            - name: HF_HOME
+              value: /cache
+          volumeMounts:
+            - name: hf-cache
+              mountPath: /cache
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 7997
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 40
+          resources:
+            requests:
+              cpu: "1"
+              memory: 4Gi
+            limits:
+              memory: 8Gi
+      volumes:
+        - name: hf-cache
+          persistentVolumeClaim:
+            claimName: infinity-hf-cache

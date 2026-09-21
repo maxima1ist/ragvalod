@@ -1,0 +1,22 @@
+# Horizontal scale for stateless tiers (stage 11.3).
+# gRPC: grpcio picks up multiple endpoints when the Service has ready endpoints.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+spec:
+  replicas: 2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-orchestrator
+spec:
+  replicas: 2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litellm
+spec:
+  replicas: 2

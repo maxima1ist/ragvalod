@@ -363,11 +363,11 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 
 **Шаг 11.1:** Профилирование узких мест (поиск, реранкинг, генерация): GPU для реранкера или уменьшение `top_k`, тюнинг встроенного кеша LiteLLM (при масштабировании — Redis-бекенд кеша), при нехватке VRAM — модель меньше (Phi-3-mini) или `max-model-len` 2048. Сюда же — эксперименты с качеством retrieval на метриках этапа 9: semantic chunking (`SemanticSplitterNodeParser`) против structure-aware разбиения из шага 4.4, тюнинг `chunk_size`/`chunk_overlap`. Инструменты: `scripts/profile_rag.py`, `make profile-rag`, рецепт — [performance_tuning.md](./performance_tuning.md); Redis-кеш — `configs/litellm.redis.yaml`, compose-профиль `cache-redis`.
 
-**Шаг 11.2:** Kubernetes-манифесты (Deployment, Service, Ingress для Gateway, PersistentVolume для Qdrant). gRPC-архитектура ложится на K8s естественно (headless services, балансировка gRPC).
+**Шаг 11.2:** Kubernetes-манифесты (Deployment, Service, Ingress для Gateway, PersistentVolume для Qdrant). gRPC-архитектура ложится на K8s естественно (headless services, балансировка gRPC). Каталог `k8s/` (kustomize `base` + overlays), проверка — `make k8s-validate`.
 
-**Шаг 11.3:** Горизонтальное масштабирование: Qdrant — кластерный режим; Gateway и RAG Orchestrator — несколько реплик; vLLM — несколько инстансов и/или мульти-GPU (tensor parallelism) для тяжёлых моделей.
+**Шаг 11.3:** Горизонтальное масштабирование: Qdrant — кластерный режим; Gateway и RAG Orchestrator — несколько реплик; vLLM — несколько инстансов и/или мульти-GPU (tensor parallelism) для тяжёлых моделей. Overlay `k8s/overlays/ha` (реплики GW/RAG/LiteLLM, Redis-кеш); Qdrant cluster — `k8s/overlays/ha/qdrant-cluster.md`; multi-GPU vLLM — `vllm-multigpu.yaml.example`.
 
-**Шаг 11.4:** Секреты через Vault/KMS/Sealed Secrets; инфраструктурный мониторинг (Prometheus + Grafana): GPU, задержки, ошибки.
+**Шаг 11.4:** Секреты через Vault/KMS/Sealed Secrets; инфраструктурный мониторинг (Prometheus + Grafana): GPU, задержки, ошибки. Примеры: `k8s/examples/sealed-secret.yaml.example`, `external-secrets-vault.md`; overlay `k8s/overlays/observability`.
 
 ---
 

@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingestion-grpc
+  labels:
+    app: ingestion
+spec:
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: 50051
+  selector:
+    app: ingestion
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ingestion-data
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingestion
+  labels:
+    app: ingestion
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ingestion
+  template:
+    metadata:
+      labels:
+        app: ingestion
+    spec:
+      containers:
+        - name: ingestion
+          image: ragvalod/ingestion:latest
+          ports:
+            - containerPort: 50051
+              name: grpc
+          env:
+            - name: INGESTION_GRPC_HOST
+              value: 0.0.0.0
+            - name: INGESTION_GRPC_PORT
+              value: "50051"
+            - name: INGESTION_QDRANT_HOST
+              value: qdrant
+            - name: INGESTION_QDRANT_HTTP_PORT
+              value: "6333"
+            - name: INGESTION_QDRANT_GRPC_PORT
+              value: "6334"
+            - name: INGESTION_LITELLM_BASE_URL
+              value: http://litellm:4000
+            - name: INGESTION_LITELLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ragvalod-secrets
+                  key: LITELLM_MASTER_KEY
+            - name: INGESTION_LOCAL_FILES_DIR
+              value: /data/local_files
+            - name: INGESTION_DATA_DIR
+              value: /data/ingestion
+            - name: INGESTION_CREDENTIALS_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ragvalod-secrets
+                  key: INGESTION_CREDENTIALS_ENCRYPTION_KEY
+                  optional: true
+            - name: INGESTION_CHUNK_SIZE
+              value: "512"
+            - name: INGESTION_CHUNK_OVERLAP
+              value: "100"
+          volumeMounts:
+            - name: ingestion-data
+              mountPath: /data/ingestion
+            - name: local-files
+              mountPath: /data/local_files
+              readOnly: true
+          readinessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - |
+                  import grpc
+                  from grpc_health.v1 import health_pb2, health_pb2_grpc
+                  c = grpc.insecure_channel("127.0.0.1:50051")
+                  s = health_pb2_grpc.HealthStub(c)
+                  r = s.Check(health_pb2.HealthCheckRequest())
+                  assert r.status == 1
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: ingestion-data
+          persistentVolumeClaim:
+            claimName: ingestion-data
+        - name: local-files
+          emptyDir: {}

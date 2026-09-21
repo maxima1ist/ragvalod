@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: langfuse
+  labels:
+    app: langfuse
+spec:
+  ports:
+    - port: 3000
+      targetPort: 3000
+  selector:
+    app: langfuse
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: langfuse
+  labels:
+    app: langfuse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: langfuse
+  template:
+    metadata:
+      labels:
+        app: langfuse
+    spec:
+      containers:
+        - name: langfuse
+          image: langfuse/langfuse:2
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ragvalod-secrets
+                  key: LANGFUSE_DATABASE_URL
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ragvalod-secrets
+                  key: LANGFUSE_NEXTAUTH_SECRET
+            - name: SALT
+              valueFrom:
+                secretKeyRef:
+                  name: ragvalod-secrets
+                  key: LANGFUSE_SALT
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ragvalod-secrets
+                  key: LANGFUSE_ENCRYPTION_KEY
+            - name: NEXTAUTH_URL
+              value: https://ragvalod.local/langfuse
+            - name: TELEMETRY_ENABLED
+              value: "false"
+          readinessProbe:
+            httpGet:
+              path: /api/public/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
