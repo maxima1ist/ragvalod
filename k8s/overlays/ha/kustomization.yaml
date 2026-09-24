@@ -4,13 +4,13 @@ namespace: ragvalod
 resources:
   - ../../base
   - redis.yaml
-  - replicas-patch.yaml
 configMapGenerator:
   - name: litellm-config
     behavior: replace
     files:
-      - config.yaml=../../../configs/litellm.redis.yaml
+      - config.yaml=configs/litellm.redis.yaml
 generatorOptions:
   disableNameSuffixHash: true
 patches:
+  - path: replicas-patch.yaml
   - path: litellm-redis-env.yaml

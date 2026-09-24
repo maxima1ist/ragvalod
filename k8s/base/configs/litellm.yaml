@@ -1,0 +1,35 @@
+# LiteLLM Proxy — DB-less (no DATABASE_URL).
+# Consumers call aliases; backends swap here without code changes.
+#
+# Stage 8: chat-default → local vLLM (compose profile `local-llm`).
+# Without that profile chat completions fail until vLLM is up or you
+# restore the OpenRouter block below.
+model_list:
+  - model_name: chat-default
+    litellm_params:
+      model: hosted_vllm/Qwen/Qwen2.5-7B-Instruct-AWQ
+      api_base: http://vllm:8000/v1
+      api_key: "none"
+      # OpenRouter fallback (stage 3): uncomment and comment the block above.
+      # model: openrouter/openrouter/free
+      # api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: embedder-default
+    litellm_params:
+      model: openai/intfloat/multilingual-e5-small
+      api_base: http://infinity:7997
+      api_key: "none"
+  - model_name: reranker-default
+    litellm_params:
+      model: infinity/BAAI/bge-reranker-v2-m3
+      api_base: http://infinity:7997
+      api_key: "none"
+
+litellm_settings:
+  cache: true
+  cache_params:
+    type: local
+  # Avoid hanging forever if vLLM is cold-starting / OOM.
+  request_timeout: 300
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY

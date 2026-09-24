@@ -42,8 +42,11 @@ kubectl -n ragvalod get pods,ingress
 Проверка без кластера:
 
 ```bash
-make k8s-validate   # kubectl kustomize
+make k8s-validate   # sync LiteLLM configs into k8s/ + kubectl kustomize
+kubectl kustomize k8s/base   # то же, без make
 ```
+
+Kustomize разрешает только файлы **внутри** каталога overlay; копии `configs/litellm*.yaml` лежат в `k8s/base/configs/` и `k8s/overlays/ha/configs/`. После правки `configs/litellm.yaml` в корне: `make k8s-sync-config`.
 
 ## Ingress и TLS
 

@@ -14,7 +14,7 @@ resources:
 configMapGenerator:
   - name: litellm-config
     files:
-      - config.yaml=../../configs/litellm.yaml
+      - config.yaml=configs/litellm.yaml
 generatorOptions:
   disableNameSuffixHash: true
 images:

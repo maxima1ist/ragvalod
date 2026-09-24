@@ -2,7 +2,7 @@
 
 Задачи, которые **не блокируют** закрытие этапов в [progress.md](./progress.md), но требуют секретов пользователя или отдельного шага после этапа 11.
 
-## Google Drive — live ingest через API
+## Google Drive — live ingest через API (шаг D.2)
 
 - **Статус:** адаптер и unit-тесты (мок `GoogleDriveReader`) — OK; **реальный ингест не проверялся**.
 - **Нужно:** service account JSON (или OAuth `authorized_user_info`), folder/file IDs, расшарить папку на email SA.
@@ -15,4 +15,4 @@
 - **Варианты:** апгрейд Langfuse v3 (OSS evals) **или** внешний judge через LiteLLM + scores API.
 - **Критерии:** [configs/langfuse_judge.yaml](../configs/langfuse_judge.yaml) (Ragas: faithfulness, answer_relevancy, context_precision).
 - **Не путать:** Project API Keys (`pk-lf-…`) ≠ LLM Connections.
-- **Когда:** после этапа 11 (см. [design_and_plan.md](./design_and_plan.md), шаг D.1).
+- **Когда:** после этапа 11 (см. [design_and_plan.md](./design_and_plan.md), шаг D.1; [progress.md](./progress.md)).

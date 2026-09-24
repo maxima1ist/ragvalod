@@ -1,4 +1,4 @@
-.PHONY: help sync protos lint test smoke-qdrant smoke-litellm smoke-langfuse clear-qdrant bench-local-llm profile-rag k8s-validate up up-local-llm up-monitoring up-all down
+.PHONY: help sync protos lint test smoke-qdrant smoke-litellm smoke-langfuse clear-qdrant bench-local-llm profile-rag k8s-sync-config k8s-validate up up-local-llm up-monitoring up-all down
 
 help:
 	@echo "Targets: sync | protos | lint | test | smoke-qdrant | smoke-litellm | smoke-langfuse | clear-qdrant | bench-local-llm | profile-rag | k8s-validate | up | up-local-llm | up-monitoring | up-all | down"
@@ -38,7 +38,11 @@ bench-local-llm:
 profile-rag:
 	uv run python scripts/profile_rag.py
 
-k8s-validate:
+k8s-sync-config:
+	cp configs/litellm.yaml k8s/base/configs/litellm.yaml
+	cp configs/litellm.redis.yaml k8s/overlays/ha/configs/litellm.redis.yaml
+
+k8s-validate: k8s-sync-config
 	kubectl kustomize k8s/base >/dev/null
 	kubectl kustomize k8s/overlays/ha >/dev/null
 	kubectl kustomize k8s/overlays/monitoring >/dev/null
