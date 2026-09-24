@@ -1,0 +1,13 @@
+# Laptop / kind smoke: no GPU vLLM, no Ingress (use port-forward).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ragvalod
+resources:
+  - ../../base
+images:
+  - name: ghcr.io/berriai/litellm
+    newName: ragvalod/litellm
+    newTag: local
+patches:
+  - path: scale-vllm-off.yaml
+  - path: delete-ingress.yaml

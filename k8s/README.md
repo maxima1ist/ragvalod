@@ -27,6 +27,48 @@ docker build -f rag_orchestrator/Dockerfile -t ragvalod/rag-orchestrator:latest 
 # push в ваш registry и обновите images: в overlays
 ```
 
+## Локальный smoke на kind (без GPU / Ingress)
+
+Прошлый полный `base` на ноутбуке ломался на трёх вещах: Ingress без контроллера, vLLM без GPU, `:latest` / GHCR pull из ноды kind.
+
+Overlay **`k8s/overlays/local`**: vLLM `replicas: 0`, Ingress убран, LiteLLM → локальный тег `ragvalod/litellm:local`.  
+Overlay **`k8s/overlays/local-ha`**: то же + 2 реплики GW/RAG/LiteLLM и Redis.
+
+```bash
+# 1) кластер
+kind create cluster --name ragvalod-smoke --config k8s/kind-smoke.yaml
+
+# 2) образы приложений (как в compose) + одноплатформенный LiteLLM
+docker compose build gateway ingestion rag_orchestrator
+docker tag ragvalod-gateway:latest ragvalod/gateway:latest
+docker tag ragvalod-ingestion:latest ragvalod/ingestion:latest
+docker tag ragvalod-rag_orchestrator:latest ragvalod/rag-orchestrator:latest
+printf 'FROM ghcr.io/berriai/litellm:main-stable\n' | docker build -t ragvalod/litellm:local -
+
+kind load docker-image --name ragvalod-smoke \
+  ragvalod/gateway:latest ragvalod/ingestion:latest \
+  ragvalod/rag-orchestrator:latest ragvalod/litellm:local \
+  michaelf34/infinity:latest-cpu
+
+# 3) деплой
+kubectl apply -f k8s/base/namespace.yaml
+kubectl apply -f k8s/base/secret.example.yaml
+kubectl apply -k k8s/overlays/local
+
+# 4) проверка (Infinity может долго греть модели — /health его не ждёт)
+kubectl -n ragvalod port-forward svc/gateway 8000:8000
+curl -s http://127.0.0.1:8000/health
+# ожидаем status=ok, data_initialized=false до ингеста
+
+# 5) HA (опционально)
+kubectl apply -k k8s/overlays/local-ha
+
+# 6) снести кластер
+kind delete cluster --name ragvalod-smoke
+```
+
+`imagePullPolicy: IfNotPresent` на локальных образах обязателен: тег `:latest` иначе всегда тянется с Docker Hub.
+
 ## Деплой (base)
 
 ```bash

@@ -12,6 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
 KUSTOMIZE_DIRS = [
     ROOT / "k8s" / "base",
     ROOT / "k8s" / "overlays" / "ha",
+    ROOT / "k8s" / "overlays" / "local",
+    ROOT / "k8s" / "overlays" / "local-ha",
     ROOT / "k8s" / "overlays" / "monitoring",
     ROOT / "k8s" / "overlays" / "observability",
 ]

@@ -41,6 +41,7 @@ spec:
       containers:
         - name: ingestion
           image: ragvalod/ingestion:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 50051
               name: grpc

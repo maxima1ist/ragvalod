@@ -45,6 +45,8 @@ k8s-sync-config:
 k8s-validate: k8s-sync-config
 	kubectl kustomize k8s/base >/dev/null
 	kubectl kustomize k8s/overlays/ha >/dev/null
+	kubectl kustomize k8s/overlays/local >/dev/null
+	kubectl kustomize k8s/overlays/local-ha >/dev/null
 	kubectl kustomize k8s/overlays/monitoring >/dev/null
 	kubectl kustomize k8s/overlays/observability >/dev/null
 
