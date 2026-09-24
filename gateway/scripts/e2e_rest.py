@@ -77,6 +77,7 @@ def main() -> int:
             headers=headers,
             json={"query": args.query, "top_k": 10, "rerank_top_n": 3, "max_tokens": 256},
         )
+        print("generate query:", args.query)
         print("generate status:", gen.status_code)
         print("generate body:", gen.text)
         if gen.status_code != 200:
