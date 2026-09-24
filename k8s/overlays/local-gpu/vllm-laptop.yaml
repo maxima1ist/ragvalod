@@ -1,11 +1,10 @@
+# Single-GPU laptop: no nvidia.com/gpu (kind has no device plugin),
+# hostPath devices + compose HF cache mounted into the kind node at /hf-cache.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: vllm
 spec:
-  replicas: 1
-  strategy:
-    type: Recreate
   template:
     spec:
       containers:
@@ -36,9 +35,6 @@ spec:
               value: /cache
             - name: HF_HUB_DISABLE_XET
               value: "1"
-            # K8s injects VLLM_PORT=tcp://… for Service named "vllm".
-            - name: VLLM_PORT
-              value: "8000"
             - name: NVIDIA_VISIBLE_DEVICES
               value: all
             - name: NVIDIA_DRIVER_CAPABILITIES
@@ -47,7 +43,6 @@ spec:
               value: /usr/lib/x86_64-linux-gnu
           securityContext:
             privileged: true
-          resources: {}
           volumeMounts:
             - name: hf-cache
               mountPath: /cache
@@ -63,25 +58,3 @@ spec:
               mountPath: /usr/lib/x86_64-linux-gnu/libcuda.so.1
             - name: libnvml
               mountPath: /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1
-      volumes:
-        - name: hf-cache
-          persistentVolumeClaim:
-            claimName: vllm-hf-cache
-        - name: nvidia0
-          hostPath:
-            path: /dev/nvidia0
-        - name: nvidiactl
-          hostPath:
-            path: /dev/nvidiactl
-        - name: nvidia-uvm
-          hostPath:
-            path: /dev/nvidia-uvm
-        - name: nvidia-uvm-tools
-          hostPath:
-            path: /dev/nvidia-uvm-tools
-        - name: libcuda
-          hostPath:
-            path: /usr/lib/x86_64-linux-gnu/libcuda.so.1
-        - name: libnvml
-          hostPath:
-            path: /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1

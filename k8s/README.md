@@ -35,8 +35,8 @@ Overlay **`k8s/overlays/local`**: vLLM `replicas: 0`, Ingress убран, LiteLL
 Overlay **`k8s/overlays/local-ha`**: то же + 2 реплики GW/RAG/LiteLLM и Redis.
 
 ```bash
-# 1) кластер
-kind create cluster --name ragvalod-smoke --config k8s/kind-smoke.yaml
+# 1) кластер (подставляет абсолютный путь test_data/ в extraMount)
+scripts/kind_create.sh
 
 # 2) образы приложений (как в compose) + одноплатформенный LiteLLM
 docker compose build gateway ingestion rag_orchestrator
@@ -50,7 +50,7 @@ kind load docker-image --name ragvalod-smoke \
   ragvalod/rag-orchestrator:latest ragvalod/litellm:local \
   michaelf34/infinity:latest-cpu
 
-# 3) деплой
+# 3) деплой (namespace до Secret)
 kubectl apply -f k8s/base/namespace.yaml
 kubectl apply -f k8s/base/secret.example.yaml
 kubectl apply -k k8s/overlays/local
@@ -59,6 +59,9 @@ kubectl apply -k k8s/overlays/local
 kubectl -n ragvalod port-forward svc/gateway 8000:8000
 curl -s http://127.0.0.1:8000/health
 # ожидаем status=ok, data_initialized=false до ингеста
+
+# 4b) ingest без generate (local overlay без vLLM)
+GATEWAY_BASE_URL=http://127.0.0.1:8000 uv run python gateway/scripts/e2e_rest.py --skip-generate
 
 # 5) HA (опционально)
 kubectl apply -k k8s/overlays/local-ha
@@ -71,23 +74,25 @@ kind delete cluster --name ragvalod-smoke
 
 ## Kind + GPU ноутбука (RTX)
 
-Хостовый GPU **не попадает в kind сам** (нода — обычный Docker/`runc`). Нужно:
+Хостовый GPU **не попадает в kind сам**. Device plugin без NVIDIA Container Toolkit в ноде карту не видит — на kind используем hostPath `/dev/nvidia*` (`k8s/examples/nvidia-device-plugin.yaml` — для нормальных GPU-нод).
 
-1. Создать кластер с bind-mount `/dev/nvidia*` — `k8s/kind-gpu.yaml`.
-2. Скопировать в ноду `nvidia-smi` и `libcuda`/`libnvidia-ml` с хоста (device plugin без toolkit в ноде GPU не видит).
-3. Overlay **`k8s/overlays/local-gpu`**: Ingress off, vLLM `replicas: 1`, `strategy: Recreate` (одна карта — не крутить два пода), privileged + hostPath `/dev/nvidia*`, без `nvidia.com/gpu` (иначе Pending).
-4. Образ vLLM (~30 ГБ) загрузить как локальный тег: `docker compose` `FROM vllm/vllm-openai:v0.9.2` → `ragvalod/vllm:local` → `kind load`.
+1. Кластер: `scripts/kind_create.sh k8s/kind-gpu.yaml` (bind-mount `/dev/nvidia*` + hf-cache).
+2. Драйвер в ноду: `scripts/kind_prepare_gpu_node.sh`.
+3. Overlay **`k8s/overlays/local-gpu`**: Ingress off, vLLM×1 + `Recreate`, privileged + hostPath, без `nvidia.com/gpu`.
+4. Веса: extraMount volume `ragvalod_hf_cache` → `/hf-cache` (скрипт печатает `hostPath`). Иначе vLLM качает Qwen в пустой каталог.
+5. Образ vLLM: `FROM vllm/vllm-openai:v0.9.2` → `ragvalod/vllm:local` → `kind load` (как LiteLLM).
 
-Проверка GPU в поде: `k8s/overlays/local-gpu/gpu-smi-test.yaml` → `nvidia-smi -L` должно показать RTX.
+Проверка GPU: `k8s/overlays/local-gpu/gpu-smi-test.yaml`.
 
-Service с именем `vllm` / `infinity` инжектит `VLLM_PORT` / `INFINITY_PORT` как `tcp://…` — в манифестах заданы числовые override.
+У подов `enableServiceLinks: false`: иначе Service `vllm` / `infinity` выставляет `VLLM_PORT`/`INFINITY_PORT=tcp://…` и ломает процессы. Не задавать `VLLM_PORT=8000` вместе с `--port 8000` — ядро vLLM считает порт занятым.
 
-Полный chat через vLLM в kind упирается ещё в скачивание весов Qwen в пустой PVC (на compose они уже в volume `hf_cache`). Для чата на этой машине по-прежнему проще `make up-local-llm`.
+Для чата на ноутбуке по-прежнему проще `make up-local-llm`.
 
 ## Деплой (base)
 
 ```bash
-# Секреты (не коммитить реальные значения)
+# Секреты (не коммитить реальные значения). Сначала namespace.
+kubectl apply -f k8s/base/namespace.yaml
 cp k8s/base/secret.example.yaml k8s/base/secret.yaml
 # отредактируйте secret.yaml, затем:
 kubectl apply -f k8s/base/secret.yaml

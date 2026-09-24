@@ -11,3 +11,9 @@ images:
 patches:
   - path: scale-vllm-off.yaml
   - path: delete-ingress.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: ingestion
+    path: ingestion-testdata.yaml

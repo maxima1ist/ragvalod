@@ -1,4 +1,8 @@
-# Privileged device plugin — sees /dev/nvidia* bind-mounted into the kind node.
+# NVIDIA device plugin for real GPU nodes (toolkit + nvidia.com/gpu).
+# On kind this does NOT see the GPU: the node has no NVIDIA Container Toolkit.
+# Laptop kind smoke uses hostPath /dev/nvidia* instead (k8s/overlays/local-gpu).
+#
+#   kubectl apply -f k8s/examples/nvidia-device-plugin.yaml
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:

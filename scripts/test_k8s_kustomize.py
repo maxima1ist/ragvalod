@@ -38,6 +38,35 @@ def test_kustomize_build(path: Path) -> None:
     assert "kind:" in result.stdout
 
 
+@pytest.mark.skipif(not _kubectl_available(), reason="kubectl not installed")
+def test_service_links_disabled_for_named_ports() -> None:
+    """K8s injects VLLM_PORT/INFINITY_PORT as tcp://… unless service links are off."""
+    result = subprocess.run(
+        ["kubectl", "kustomize", str(ROOT / "k8s" / "base")],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout.count("enableServiceLinks: false") >= 2
+    assert "name: VLLM_PORT" not in result.stdout
+    assert "name: INFINITY_PORT" not in result.stdout
+
+
+@pytest.mark.skipif(not _kubectl_available(), reason="kubectl not installed")
+def test_local_overlays_mount_test_data() -> None:
+    for overlay in ("local", "local-ha", "local-gpu"):
+        result = subprocess.run(
+            ["kubectl", "kustomize", str(ROOT / "k8s" / "overlays" / overlay)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        assert "mountPath: /test_data" in result.stdout, overlay
+        assert "path: /test_data" in result.stdout, overlay
+
+
 def test_k8s_base_manifests_exist() -> None:
     base = ROOT / "k8s" / "base"
     for name in (

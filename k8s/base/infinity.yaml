@@ -38,6 +38,7 @@ spec:
       labels:
         app: infinity
     spec:
+      enableServiceLinks: false
       containers:
         - name: infinity
           image: michaelf34/infinity:latest-cpu
@@ -55,9 +56,6 @@ spec:
           ports:
             - containerPort: 7997
           env:
-            # K8s injects INFINITY_PORT=tcp://… for Service named "infinity"; override for infinity_emb CLI.
-            - name: INFINITY_PORT
-              value: "7997"
             - name: HF_HOME
               value: /cache
           volumeMounts:

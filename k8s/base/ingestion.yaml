@@ -38,6 +38,7 @@ spec:
       labels:
         app: ingestion
     spec:
+      enableServiceLinks: false
       containers:
         - name: ingestion
           image: ragvalod/ingestion:latest

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from dataclasses import dataclass
@@ -63,6 +64,26 @@ class QdrantReader:
 
     async def close(self) -> None:
         await self._client.close()
+
+    async def wait_for_qdrant_at_startup(
+        self,
+        *,
+        attempts: int = 60,
+        delay_seconds: float = 2.0,
+    ) -> None:
+        """Retry transient Qdrant unavailability; fail immediately on model mismatch."""
+        last: BaseException | None = None
+        for i in range(1, attempts + 1):
+            try:
+                await self.validate_manifest_at_startup()
+                return
+            except RuntimeError:
+                raise
+            except Exception as exc:
+                last = exc
+                logger.warning("qdrant not ready (%s), retry %s/%s", exc, i, attempts)
+                await asyncio.sleep(delay_seconds)
+        raise last if last else RuntimeError("qdrant not ready")
 
     async def validate_manifest_at_startup(self) -> None:
         """Fail hard on model mismatch; tolerate missing collection (cold start)."""

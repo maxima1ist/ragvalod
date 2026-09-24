@@ -1,11 +1,13 @@
 # kind cluster with host NVIDIA devices bind-mounted into the node.
 # Requires /dev/nvidia* on the host (see docs/host_gpu_setup.md).
-# Recreate: kind delete cluster --name ragvalod-smoke && kind create cluster --name ragvalod-smoke --config k8s/kind-gpu.yaml
+# Recreate: kind delete cluster --name ragvalod-smoke && scripts/kind_create.sh k8s/kind-gpu.yaml
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
     extraMounts:
+      - hostPath: __RAGVALOD_TEST_DATA__
+        containerPath: /test_data
       - hostPath: /dev/nvidia0
         containerPath: /dev/nvidia0
       - hostPath: /dev/nvidiactl
@@ -19,3 +21,6 @@ nodes:
       # Lets nvidia-container-runtime inject GPUs if the daemon uses that hook.
       - hostPath: /dev/null
         containerPath: /var/run/nvidia-container-devices/all
+      # Filled by scripts/kind_create.sh from Compose volume ragvalod_hf_cache.
+      - hostPath: __RAGVALOD_HF_CACHE__
+        containerPath: /hf-cache

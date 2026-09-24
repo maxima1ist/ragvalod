@@ -28,6 +28,7 @@ spec:
       labels:
         app: rag-orchestrator
     spec:
+      enableServiceLinks: false
       containers:
         - name: rag-orchestrator
           image: ragvalod/rag-orchestrator:latest

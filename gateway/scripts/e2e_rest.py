@@ -30,6 +30,11 @@ def main() -> int:
         help="Container path for local_files ingest (smoke corpus default: /test_data)",
     )
     parser.add_argument("--skip-ingest", action="store_true")
+    parser.add_argument(
+        "--skip-generate",
+        action="store_true",
+        help="Stop after ingest (kind local overlay has no vLLM)",
+    )
     args = parser.parse_args()
 
     headers = {"X-API-Key": args.api_key}
@@ -71,6 +76,9 @@ def main() -> int:
             else:
                 print("ingest timeout", file=sys.stderr)
                 return 1
+
+        if args.skip_generate:
+            return 0
 
         gen = client.post(
             "/generate",

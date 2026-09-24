@@ -29,6 +29,7 @@ spec:
       labels:
         app: gateway
     spec:
+      enableServiceLinks: false
       containers:
         - name: gateway
           image: ragvalod/gateway:latest

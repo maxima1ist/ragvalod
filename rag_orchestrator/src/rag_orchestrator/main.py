@@ -100,7 +100,7 @@ async def serve() -> None:
         embedding_model_name=settings.embedding_model_name,
         vector_size=settings.embedding_vector_size,
     )
-    await store.validate_manifest_at_startup()
+    await store.wait_for_qdrant_at_startup()
 
     llm = LiteLLMClient(
         base_url=settings.litellm_base_url,

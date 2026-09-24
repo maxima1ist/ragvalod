@@ -28,6 +28,7 @@ spec:
       labels:
         app: litellm
     spec:
+      enableServiceLinks: false
       containers:
         - name: litellm
           image: ghcr.io/berriai/litellm:main-stable
