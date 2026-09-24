@@ -69,6 +69,21 @@ kind delete cluster --name ragvalod-smoke
 
 `imagePullPolicy: IfNotPresent` на локальных образах обязателен: тег `:latest` иначе всегда тянется с Docker Hub.
 
+## Kind + GPU ноутбука (RTX)
+
+Хостовый GPU **не попадает в kind сам** (нода — обычный Docker/`runc`). Нужно:
+
+1. Создать кластер с bind-mount `/dev/nvidia*` — `k8s/kind-gpu.yaml`.
+2. Скопировать в ноду `nvidia-smi` и `libcuda`/`libnvidia-ml` с хоста (device plugin без toolkit в ноде GPU не видит).
+3. Overlay **`k8s/overlays/local-gpu`**: Ingress off, vLLM `replicas: 1`, `strategy: Recreate` (одна карта — не крутить два пода), privileged + hostPath `/dev/nvidia*`, без `nvidia.com/gpu` (иначе Pending).
+4. Образ vLLM (~30 ГБ) загрузить как локальный тег: `docker compose` `FROM vllm/vllm-openai:v0.9.2` → `ragvalod/vllm:local` → `kind load`.
+
+Проверка GPU в поде: `k8s/overlays/local-gpu/gpu-smi-test.yaml` → `nvidia-smi -L` должно показать RTX.
+
+Service с именем `vllm` / `infinity` инжектит `VLLM_PORT` / `INFINITY_PORT` как `tcp://…` — в манифестах заданы числовые override.
+
+Полный chat через vLLM в kind упирается ещё в скачивание весов Qwen в пустой PVC (на compose они уже в volume `hf_cache`). Для чата на этой машине по-прежнему проще `make up-local-llm`.
+
 ## Деплой (base)
 
 ```bash

@@ -1,0 +1,26 @@
+# Laptop kind + host GPU: Ingress off, LiteLLM local image, vLLM replicas=1.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ragvalod
+resources:
+  - ../../base
+images:
+  - name: ghcr.io/berriai/litellm
+    newName: ragvalod/litellm
+    newTag: local
+  - name: vllm/vllm-openai
+    newName: ragvalod/vllm
+    newTag: local
+patches:
+  - path: delete-ingress.yaml
+  - path: vllm-laptop.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: vllm
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/containers/0/resources/limits/nvidia.com~1gpu
+      - op: remove
+        path: /spec/template/spec/containers/0/resources/requests/nvidia.com~1gpu
