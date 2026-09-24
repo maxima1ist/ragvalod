@@ -34,7 +34,7 @@ uv sync --all-packages --group dev   # once, for host-side scripts
 uv run python gateway/scripts/e2e_rest.py
 ```
 
-**Real usage:** put `.txt` / `.md` / `.pdf` / `.docx` into empty `data/`, then [ingest](#ingest) that folder (default path). Keep `test_data/` for smoke/e2e only.
+**Real usage:** put `.txt` / `.md` / `.pdf` / `.docx` into empty `data/`, then [ingest](#ingest) that folder (default path). Keep `test_data/` for smoke/e2e only. After smoke/e2e, [clear the index](#clear-the-vector-db) completely before that ingest — smoke chunks stay until you do.
 
 Tear down (keeps volumes): `make down`.
 
@@ -95,6 +95,8 @@ curl -s -X POST http://localhost:8000/ingest \
 ```
 
 Or: `uv run python gateway/scripts/e2e_rest.py` (uses `/test_data` by default).
+
+Before ingesting real files from `data/`, [clear the index](#clear-the-vector-db) completely.
 
 Poll until done:
 
@@ -201,7 +203,7 @@ curl -s -X DELETE -H "X-API-Key: change-me" http://localhost:8000/schedules/<id>
 
 ### Clear the vector DB
 
-Deletes the Qdrant collection `documents` (chunks + ingest markers). Stack stays up.
+Deletes the Qdrant collection `documents` (chunks + ingest markers). Stack stays up. Required after smoke/e2e, before the first ingest of real documents in `data/`.
 
 ```bash
 make clear-qdrant
