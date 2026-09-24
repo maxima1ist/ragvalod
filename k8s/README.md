@@ -48,7 +48,7 @@ printf 'FROM ghcr.io/berriai/litellm:main-stable\n' | docker build -t ragvalod/l
 kind load docker-image --name ragvalod-smoke \
   ragvalod/gateway:latest ragvalod/ingestion:latest \
   ragvalod/rag-orchestrator:latest ragvalod/litellm:local \
-  michaelf34/infinity:latest-cpu
+  michaelf34/infinity:latest-cpu qdrant/qdrant:v1.14.1
 
 # 3) деплой (namespace до Secret)
 kubectl apply -f k8s/base/namespace.yaml
@@ -80,13 +80,25 @@ kind delete cluster --name ragvalod-smoke
 2. Драйвер в ноду: `scripts/kind_prepare_gpu_node.sh`.
 3. Overlay **`k8s/overlays/local-gpu`**: Ingress off, vLLM×1 + `Recreate`, privileged + hostPath, без `nvidia.com/gpu`.
 4. Веса: extraMount volume `ragvalod_hf_cache` → `/hf-cache` (скрипт печатает `hostPath`). Иначе vLLM качает Qwen в пустой каталог.
-5. Образ vLLM: `FROM vllm/vllm-openai:v0.9.2` → `ragvalod/vllm:local` → `kind load` (как LiteLLM).
+5. Образ vLLM: `FROM vllm/vllm-openai:v0.9.2` → `ragvalod/vllm:local` → `kind load` (как LiteLLM). Qdrant тоже лучше `kind load` (`qdrant/qdrant:v1.14.1`) — иначе под может повиснуть в `ImagePullBackOff`.
 
 Проверка GPU: `k8s/overlays/local-gpu/gpu-smi-test.yaml`.
 
+На одной RTX 3070 Laptop (8 ГБ) влезает **ровно один** под vLLM (`Qwen2.5-7B-AWQ`, `gpu-memory-utilization: 0.75`). Overlay уже `replicas: 1` + `Recreate`; вторая реплика не влезет. Infinity — CPU, карту не делит.
+
+Полный REST e2e (после Ready у vLLM и Infinity, ~5–8 мин):
+
+```bash
+kubectl apply -f k8s/base/namespace.yaml
+kubectl apply -f k8s/base/secret.example.yaml
+kubectl apply -k k8s/overlays/local-gpu
+kubectl -n ragvalod port-forward svc/gateway 8000:8000
+GATEWAY_BASE_URL=http://127.0.0.1:8000 uv run python gateway/scripts/e2e_rest.py
+```
+
 У подов `enableServiceLinks: false`: иначе Service `vllm` / `infinity` выставляет `VLLM_PORT`/`INFINITY_PORT=tcp://…` и ломает процессы. Не задавать `VLLM_PORT=8000` вместе с `--port 8000` — ядро vLLM считает порт занятым.
 
-Для чата на ноутбуке по-прежнему проще `make up-local-llm`.
+Для повседневного чата на ноутбуке по-прежнему проще `make up-local-llm`.
 
 ## Деплой (base)
 
