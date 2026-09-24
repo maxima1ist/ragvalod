@@ -34,7 +34,7 @@ uv sync --all-packages --group dev   # once, for host-side scripts
 uv run python gateway/scripts/e2e_rest.py
 ```
 
-**Real usage:** put `.txt` / `.md` / `.pdf` / `.docx` into empty `data/`, then ingest that folder (default path). Keep `test_data/` for smoke/e2e only.
+**Real usage:** put `.txt` / `.md` / `.pdf` / `.docx` into empty `data/`, then [ingest](#ingest) that folder (default path). Keep `test_data/` for smoke/e2e only.
 
 Tear down (keeps volumes): `make down`.
 
