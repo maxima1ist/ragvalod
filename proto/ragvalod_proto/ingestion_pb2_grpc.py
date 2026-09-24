@@ -70,6 +70,11 @@ class IngestionServiceStub:
                 request_serializer=ingestion__pb2.RunScheduleRequest.SerializeToString,
                 response_deserializer=ingestion__pb2.RunScheduleResponse.FromString,
                 _registered_method=True)
+        self.DeleteDocument = channel.unary_unary(
+                '/ragvalod.ingestion.v1.IngestionService/DeleteDocument',
+                request_serializer=ingestion__pb2.DeleteDocumentRequest.SerializeToString,
+                response_deserializer=ingestion__pb2.DeleteDocumentResponse.FromString,
+                _registered_method=True)
 
 
 class IngestionServiceServicer:
@@ -123,6 +128,14 @@ class IngestionServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def DeleteDocument(self, request, context):
+        """Remove one stored document (all of its chunks) from a source.
+        NOT_FOUND when that doc_id is not in the source docstore.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_IngestionServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -160,6 +173,11 @@ def add_IngestionServiceServicer_to_server(servicer, server):
                     servicer.RunSchedule,
                     request_deserializer=ingestion__pb2.RunScheduleRequest.FromString,
                     response_serializer=ingestion__pb2.RunScheduleResponse.SerializeToString,
+            ),
+            'DeleteDocument': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteDocument,
+                    request_deserializer=ingestion__pb2.DeleteDocumentRequest.FromString,
+                    response_serializer=ingestion__pb2.DeleteDocumentResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -352,6 +370,33 @@ class IngestionService:
             '/ragvalod.ingestion.v1.IngestionService/RunSchedule',
             ingestion__pb2.RunScheduleRequest.SerializeToString,
             ingestion__pb2.RunScheduleResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteDocument(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/ragvalod.ingestion.v1.IngestionService/DeleteDocument',
+            ingestion__pb2.DeleteDocumentRequest.SerializeToString,
+            ingestion__pb2.DeleteDocumentResponse.FromString,
             options,
             channel_credentials,
             insecure,

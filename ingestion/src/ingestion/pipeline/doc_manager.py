@@ -22,6 +22,10 @@ from ingestion.sources.base import SourceDocument
 logger = logging.getLogger("ingestion.doc_manager")
 
 
+class DocumentNotStoredError(Exception):
+    """The source docstore has no entry for this doc_id."""
+
+
 class RecordingVectorStore(BasePydanticVectorStore):
     """Minimal vector store so UPSERTS_AND_DELETE is enabled; we sync deletes to Qdrant."""
 
@@ -132,3 +136,36 @@ class DocumentManager:
             skipped_unchanged=skipped,
             deleted_count=len(removed_only),
         )
+
+    def stored_doc_ids(self, source: str) -> list[str]:
+        path = self._path_for(source)
+        if not path.exists():
+            return []
+        docstore = SimpleDocumentStore.from_persist_path(str(path))
+        return list(docstore.get_all_document_hashes())
+
+    def delete_source(self, source: str) -> None:
+        """Drop the source docstore. Raises if it has no stored documents."""
+        if not self.stored_doc_ids(source):
+            raise DocumentNotStoredError(f"source not stored: source={source}")
+        self._path_for(source).unlink()
+        logger.info("docstore deleted source=%s", source)
+
+    def contains(self, source: str, doc_id: str) -> bool:
+        path = self._path_for(source)
+        if not path.exists():
+            return False
+        docstore = SimpleDocumentStore.from_persist_path(str(path))
+        return bool(docstore.document_exists(doc_id))
+
+    def delete(self, source: str, doc_id: str) -> None:
+        """Drop one document from the source docstore. Raises if it is not stored."""
+        path = self._path_for(source)
+        if not path.exists():
+            raise DocumentNotStoredError(f"document not stored: source={source} doc_id={doc_id}")
+        docstore = SimpleDocumentStore.from_persist_path(str(path))
+        if not docstore.document_exists(doc_id):
+            raise DocumentNotStoredError(f"document not stored: source={source} doc_id={doc_id}")
+        docstore.delete_document(doc_id)
+        docstore.persist(persist_path=str(path))
+        logger.info("docstore deleted source=%s doc_id=%s", source, doc_id)

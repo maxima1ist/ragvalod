@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ingestion.pipeline.doc_manager import DocumentManager
+import pytest
+
+from ingestion.pipeline.doc_manager import DocumentManager, DocumentNotStoredError
 from ingestion.sources.base import SourceDocument
 
 
@@ -54,6 +56,51 @@ def test_removed_doc_deleted(tmp_path: Path) -> None:
     assert result.qdrant_doc_ids_to_delete == ["b"]
     assert result.deleted_count == 1
     assert result.skipped_unchanged == 1
+
+
+def test_delete_removes_only_that_document(tmp_path: Path) -> None:
+    mgr = DocumentManager(tmp_path)
+    mgr.sync("notion", [_doc("page-a", "one"), _doc("page-b", "two")])
+    mgr.delete("notion", "page-a")
+    assert mgr.contains("notion", "page-a") is False
+    assert mgr.contains("notion", "page-b") is True
+    again = mgr.sync("notion", [_doc("page-b", "two")])
+    assert again.to_process == []
+    assert again.qdrant_doc_ids_to_delete == []
+
+
+def test_delete_missing_document_raises(tmp_path: Path) -> None:
+    mgr = DocumentManager(tmp_path)
+    mgr.sync("notion", [_doc("page-a", "one")])
+    with pytest.raises(DocumentNotStoredError):
+        mgr.delete("notion", "missing")
+    assert mgr.contains("notion", "page-a") is True
+
+
+def test_delete_source_removes_all_documents(tmp_path: Path) -> None:
+    mgr = DocumentManager(tmp_path)
+    mgr.sync("notion", [_doc("page-a", "one"), _doc("page-b", "two")])
+    mgr.sync("local_files", [_doc("a", "one")])
+    mgr.delete_source("notion")
+    assert mgr.stored_doc_ids("notion") == []
+    assert mgr.contains("local_files", "a") is True
+    again = mgr.sync("notion", [_doc("page-a", "one"), _doc("page-b", "two")])
+    assert {d.doc_id for d in again.to_process} == {"page-a", "page-b"}
+
+
+def test_delete_source_missing_raises(tmp_path: Path) -> None:
+    mgr = DocumentManager(tmp_path)
+    with pytest.raises(DocumentNotStoredError):
+        mgr.delete_source("notion")
+
+
+def test_delete_does_not_touch_other_source(tmp_path: Path) -> None:
+    mgr = DocumentManager(tmp_path)
+    mgr.sync("local_files", [_doc("a", "one")])
+    mgr.sync("notion", [_doc("a", "notion page")])
+    mgr.delete("notion", "a")
+    assert mgr.contains("notion", "a") is False
+    assert mgr.contains("local_files", "a") is True
 
 
 def test_sources_have_isolated_docstores(tmp_path: Path) -> None:

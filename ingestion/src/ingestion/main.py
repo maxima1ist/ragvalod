@@ -13,6 +13,7 @@ from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 from ingestion.config import Settings
 from ingestion.credentials_crypto import CredentialsCrypto, CredentialsCryptoError
 from ingestion.jobs import JobManager, JobState, SourceJobState
+from ingestion.pipeline.doc_manager import DocumentNotStoredError
 from ingestion.pipeline.embeddings import EmbeddingClient
 from ingestion.qdrant_store import QdrantDocumentStore
 from ingestion.schedule_store import ScheduleStore
@@ -203,6 +204,22 @@ class IngestionServicer(ingestion_pb2_grpc.IngestionServiceServicer):
         except (CredentialsCryptoError, ValueError) as exc:
             await context.abort(grpc.StatusCode.FAILED_PRECONDITION, str(exc))
         return ingestion_pb2.RunScheduleResponse(job_id=job_id)
+
+    async def DeleteDocument(
+        self,
+        request: ingestion_pb2.DeleteDocumentRequest,
+        context: grpc.aio.ServicerContext,
+    ) -> ingestion_pb2.DeleteDocumentResponse:
+        try:
+            await self._jobs.delete_document(request.source, request.doc_id)
+        except DocumentNotStoredError as exc:
+            await context.abort(grpc.StatusCode.NOT_FOUND, str(exc))
+        except KeyError as exc:
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, str(exc))
+        except ValueError as exc:
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, str(exc))
+        logger.info("DeleteDocument source=%s doc_id=%s", request.source, request.doc_id)
+        return ingestion_pb2.DeleteDocumentResponse()
 
 
 async def serve() -> None:

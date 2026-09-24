@@ -201,6 +201,23 @@ curl -s -X POST -H "X-API-Key: change-me" http://localhost:8000/schedules/<id>/r
 curl -s -X DELETE -H "X-API-Key: change-me" http://localhost:8000/schedules/<id>
 ```
 
+### Delete stored data
+
+`doc_id` removes that document and its chunks. Omit `doc_id` to remove the whole source (every stored document, its chunks, and the source marker). Returns 404 when the document or source is not stored.
+
+```bash
+curl -s -X DELETE -G \
+  -H "X-API-Key: change-me" \
+  "http://localhost:8000/documents" \
+  --data-urlencode "source=notion" \
+  --data-urlencode "doc_id=PAGE_ID"
+
+curl -s -X DELETE -G \
+  -H "X-API-Key: change-me" \
+  "http://localhost:8000/documents" \
+  --data-urlencode "source=notion"
+```
+
 ### Clear the vector DB
 
 Deletes the Qdrant collection `documents` (chunks + ingest markers). Stack stays up. Required after smoke/e2e, before the first ingest of real documents in `data/`.

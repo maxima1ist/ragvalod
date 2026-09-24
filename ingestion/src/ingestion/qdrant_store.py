@@ -150,6 +150,43 @@ class QdrantDocumentStore:
         )
         return len(doc_ids)
 
+    async def delete_source(self, source: str) -> None:
+        """Delete every chunk and the source marker for one source."""
+        await self._client.delete(
+            collection_name=self._collection,
+            points_selector=rest_models.FilterSelector(
+                filter=rest_models.Filter(
+                    should=[
+                        rest_models.Filter(
+                            must=[
+                                rest_models.FieldCondition(
+                                    key="kind",
+                                    match=rest_models.MatchValue(value="chunk"),
+                                ),
+                                rest_models.FieldCondition(
+                                    key="source",
+                                    match=rest_models.MatchValue(value=source),
+                                ),
+                            ]
+                        ),
+                        rest_models.Filter(
+                            must=[
+                                rest_models.FieldCondition(
+                                    key="kind",
+                                    match=rest_models.MatchValue(value="source_marker"),
+                                ),
+                                rest_models.FieldCondition(
+                                    key="source_name",
+                                    match=rest_models.MatchValue(value=source),
+                                ),
+                            ]
+                        ),
+                    ]
+                )
+            ),
+        )
+        logger.info("deleted qdrant source=%s", source)
+
     async def write_source_marker(self, source: str, document_count: int) -> None:
         await self._upsert_service_point(
             f"__source_marker__:{source}",

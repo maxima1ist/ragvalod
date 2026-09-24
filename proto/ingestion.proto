@@ -21,6 +21,10 @@ service IngestionService {
   rpc ListSchedules(ListSchedulesRequest) returns (ListSchedulesResponse);
   rpc DeleteSchedule(DeleteScheduleRequest) returns (DeleteScheduleResponse);
   rpc RunSchedule(RunScheduleRequest) returns (RunScheduleResponse);
+
+  // Remove one stored document (all of its chunks) from a source.
+  // NOT_FOUND when that doc_id is not in the source docstore.
+  rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse);
 }
 
 message SourceSpec {
@@ -147,3 +151,13 @@ message RunScheduleRequest {
 message RunScheduleResponse {
   string job_id = 1;
 }
+
+message DeleteDocumentRequest {
+  // Adapter name, e.g. "notion", "local_files".
+  string source = 1;
+  // Document id stored at ingest (Notion page id, local file path, …).
+  // Empty deletes every stored document for the source.
+  string doc_id = 2;
+}
+
+message DeleteDocumentResponse {}

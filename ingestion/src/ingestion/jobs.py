@@ -13,7 +13,7 @@ from pathlib import Path
 
 from ingestion.config import Settings
 from ingestion.pipeline.chunking import chunk_documents
-from ingestion.pipeline.doc_manager import DocumentManager
+from ingestion.pipeline.doc_manager import DocumentManager, DocumentNotStoredError
 from ingestion.pipeline.embeddings import EmbeddingClient
 from ingestion.qdrant_store import QdrantDocumentStore
 from ingestion.sources.base import DataSource
@@ -77,6 +77,26 @@ class JobManager:
 
     def get(self, job_id: str) -> JobRecord | None:
         return self._jobs.get(job_id)
+
+    async def delete_document(self, source: str, doc_id: str) -> None:
+        """Delete one stored document, or the whole source when doc_id is empty."""
+        source = source.strip()
+        doc_id = doc_id.strip()
+        if not source:
+            raise ValueError("source is required")
+        self._factory.get(source)
+        # Confirm the docstore entry first so a missing document does not touch Qdrant.
+        # Qdrant is cleared before the docstore so a failed vector delete can be retried.
+        if not doc_id:
+            if not self._doc_manager.stored_doc_ids(source):
+                raise DocumentNotStoredError(f"source not stored: source={source}")
+            await self._store.delete_source(source)
+            self._doc_manager.delete_source(source)
+            return
+        if not self._doc_manager.contains(source, doc_id):
+            raise DocumentNotStoredError(f"document not stored: source={source} doc_id={doc_id}")
+        await self._store.delete_by_doc_ids(source, [doc_id])
+        self._doc_manager.delete(source, doc_id)
 
     async def start_job(
         self,

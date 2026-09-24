@@ -144,6 +144,19 @@ async def list_schedules() -> dict[str, list[ScheduleInfo]]:
     return {"schedules": [ScheduleInfo(**row) for row in rows]}
 
 
+@app.delete("/documents", dependencies=[Depends(require_api_key)])
+async def delete_document(source: str, doc_id: str = "") -> dict[str, str]:
+    """Remove one stored document, or the whole source when doc_id is omitted."""
+    try:
+        await ingestion.delete_document(source, doc_id)
+    except grpc.aio.AioRpcError as exc:
+        raise_from_grpc(exc)
+    body = {"status": "deleted", "source": source}
+    if doc_id:
+        body["doc_id"] = doc_id
+    return body
+
+
 @app.delete("/schedules/{schedule_id}", dependencies=[Depends(require_api_key)])
 async def delete_schedule(schedule_id: str) -> dict[str, str]:
     try:

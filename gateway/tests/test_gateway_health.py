@@ -194,3 +194,50 @@ def test_schedules_crud(client: TestClient) -> None:
         deleted = client.delete("/schedules/sched-1", headers={"X-API-Key": "test-key"})
         assert deleted.status_code == 200
         assert deleted.json()["status"] == "deleted"
+
+
+def test_delete_document_requires_api_key(client: TestClient) -> None:
+    response = client.delete("/documents", params={"source": "notion", "doc_id": "page-1"})
+    assert response.status_code == 401
+
+
+def test_delete_document_ok(client: TestClient) -> None:
+    with patch("gateway.main.ingestion.delete_document", new=AsyncMock()) as delete:
+        response = client.delete(
+            "/documents",
+            headers={"X-API-Key": "test-key"},
+            params={"source": "notion", "doc_id": "page-1"},
+        )
+    assert response.status_code == 200
+    assert response.json() == {"status": "deleted", "source": "notion", "doc_id": "page-1"}
+    delete.assert_awaited_once_with("notion", "page-1")
+
+
+def test_delete_source_ok(client: TestClient) -> None:
+    with patch("gateway.main.ingestion.delete_document", new=AsyncMock()) as delete:
+        response = client.delete(
+            "/documents",
+            headers={"X-API-Key": "test-key"},
+            params={"source": "notion"},
+        )
+    assert response.status_code == 200
+    assert response.json() == {"status": "deleted", "source": "notion"}
+    delete.assert_awaited_once_with("notion", "")
+
+
+def test_delete_document_not_stored(client: TestClient) -> None:
+    error = grpc.aio.AioRpcError(
+        code=grpc.StatusCode.NOT_FOUND,
+        initial_metadata=None,
+        trailing_metadata=None,
+        details="document not stored: source=notion doc_id=missing",
+        debug_error_string=None,
+    )
+    with patch("gateway.main.ingestion.delete_document", new=AsyncMock(side_effect=error)):
+        response = client.delete(
+            "/documents",
+            headers={"X-API-Key": "test-key"},
+            params={"source": "notion", "doc_id": "missing"},
+        )
+    assert response.status_code == 404
+    assert response.json()["error"] == "not_found"

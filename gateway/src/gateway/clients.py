@@ -130,6 +130,13 @@ class IngestionClient:
                 for s in response.schedules
             ]
 
+    async def delete_document(self, source: str, doc_id: str) -> None:
+        async with grpc.aio.insecure_channel(self._addr) as channel:
+            stub = ingestion_pb2_grpc.IngestionServiceStub(channel)
+            await stub.DeleteDocument(
+                ingestion_pb2.DeleteDocumentRequest(source=source, doc_id=doc_id)
+            )
+
     async def delete_schedule(self, schedule_id: str) -> None:
         async with grpc.aio.insecure_channel(self._addr) as channel:
             stub = ingestion_pb2_grpc.IngestionServiceStub(channel)

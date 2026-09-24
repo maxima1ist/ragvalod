@@ -210,3 +210,15 @@ class RunScheduleResponse(_message.Message):
     JOB_ID_FIELD_NUMBER: _ClassVar[int]
     job_id: str
     def __init__(self, job_id: _Optional[str] = ...) -> None: ...
+
+class DeleteDocumentRequest(_message.Message):
+    __slots__ = ("source", "doc_id")
+    SOURCE_FIELD_NUMBER: _ClassVar[int]
+    DOC_ID_FIELD_NUMBER: _ClassVar[int]
+    source: str
+    doc_id: str
+    def __init__(self, source: _Optional[str] = ..., doc_id: _Optional[str] = ...) -> None: ...
+
+class DeleteDocumentResponse(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
