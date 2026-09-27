@@ -1,4 +1,4 @@
-# Performance tuning (этап 11.1)
+# Performance tuning
 
 Руководство по профилированию и настройке узких мест RAG-пайплайна на тестовом стенде (RTX 3070, 8 ГБ VRAM, CPU Infinity для embed/rerank).
 
@@ -25,7 +25,7 @@ uv run python scripts/profile_rag.py
 
 Langfuse (профиль `monitoring`) даёт те же фазы в UI: spans `embed_query`, `vector_search`, `rerank`, `chat` внутри `rag.generate`.
 
-### Типичная картина (стенд этапа 8, Qwen2.5-7B-AWQ)
+### Типичная картина (стенд RTX 3070, Qwen2.5-7B-AWQ)
 
 | Фаза | Порядок | Комментарий |
 |------|---------|-------------|
@@ -53,7 +53,7 @@ Langfuse (профиль `monitoring`) даёт те же фазы в UI: spans 
 
 Текущий конфиг: in-memory cache (`configs/litellm.yaml`, `cache_params.type: local`). Кеширует идентичные embed/chat запросы — удобно в dev, искажает повторные замеры latency.
 
-Для нескольких реплик LiteLLM / ingestion (этап 11.3) — **Redis**:
+Для нескольких реплик LiteLLM / ingestion — **Redis**:
 
 1. Поднять Redis (см. профиль `cache-redis` в `docker-compose.yml` или свой инстанс).
 2. Переключить конфиг на `configs/litellm.redis.yaml` (volume в сервисе `litellm`).
@@ -76,7 +76,7 @@ Langfuse (профиль `monitoring`) даёт те же фазы в UI: spans 
 
 См. [host_gpu_setup.md](./host_gpu_setup.md) и `.env`: `MAX_MODEL_LEN`, `VLLM_GPU_MEMORY_UTILIZATION`, `VLLM_MAX_NUM_SEQS`.
 
-При OOM: `MAX_MODEL_LEN=2048` или модель меньше (например Phi-3-mini). На сервере — tensor parallelism (этап 11.3).
+При OOM: `MAX_MODEL_LEN=2048` или модель меньше (например Phi-3-mini). На сервере с несколькими GPU — tensor parallelism.
 
 ## Infinity: GPU для rerank
 

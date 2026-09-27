@@ -1,13 +1,13 @@
-# Kubernetes deployment (этап 11)
+# Kubernetes deployment
 
 Манифесты повторяют архитектуру `docker-compose.yml`: REST только через **Gateway**, внутренние вызовы — gRPC.
 
 ## Структура
 
 - `base/` — одна реплика каждого сервиса, Ingress на Gateway `:8000`.
-- `overlays/ha/` — горизонтальное масштабирование Gateway/RAG, Redis-кеш LiteLLM (этап 11.3).
-- `overlays/monitoring/` — Langfuse + Postgres (этап 9).
-- `overlays/secrets/` — пример SealedSecret / внешние секреты (этап 11.4).
+- `overlays/ha/` — горизонтальное масштабирование Gateway/RAG, Redis-кеш LiteLLM.
+- `overlays/monitoring/` — Langfuse + Postgres.
+- `overlays/secrets/` — пример SealedSecret / внешние секреты.
 
 ## Требования
 

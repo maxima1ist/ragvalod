@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Load / latency probe for local chat via Gateway (stage 8.5).
+"""Load / latency probe for local chat via Gateway.
 
 Measures sequential and parallel POST /generate latency and rough tok/s
 from max_tokens (upper bound; actual completion may be shorter).

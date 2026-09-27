@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     chunk_overlap: int = 100
     collection_name: str = "documents"
     local_files_dir: str = "/data/local_files"
-    # Persistent dir for schedules + docstore (stage 10).
+    # Persistent dir for schedules + docstore.
     data_dir: str = "/data/ingestion"
     # Fernet key (url-safe base64) or any secret (SHA-256 → Fernet). Empty = no encrypted schedules.
     credentials_encryption_key: str = ""

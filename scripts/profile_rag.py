@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Break down RAG latency by phase (stage 11.1).
+"""Break down RAG latency by phase.
 
 Measures embed → vector search → rerank → chat the same way the orchestrator
 does (LiteLLM + Qdrant gRPC). Use after ingest with data_initialized=true.

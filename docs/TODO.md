@@ -1,6 +1,6 @@
 # TODO (ручная валидация / отложено)
 
-Задачи, которые **не блокируют** закрытие этапов в [progress.md](./progress.md), но требуют секретов пользователя или отдельного шага после этапа 11.
+Задачи, которые требуют секретов пользователя или отдельного ручного шага. Трекер шагов — [progress.md](./progress.md).
 
 ## Google Drive — live ingest через API (шаг D.2)
 
@@ -11,8 +11,8 @@
 
 ## Langfuse LLM-as-a-judge (шаг D.1)
 
-- **Статус:** трейсы `rag.generate` работают (этап 9); managed evals UI на Langfuse 2.95 OSS недоступен.
+- **Статус:** трейсы `rag.generate` работают; managed evals UI на Langfuse 2.95 OSS недоступен.
 - **Варианты:** апгрейд Langfuse v3 (OSS evals) **или** внешний judge через LiteLLM + scores API.
 - **Критерии:** [configs/langfuse_judge.yaml](../configs/langfuse_judge.yaml) (Ragas: faithfulness, answer_relevancy, context_precision).
 - **Не путать:** Project API Keys (`pk-lf-…`) ≠ LLM Connections.
-- **Когда:** после этапа 11 (см. [design_and_plan.md](./design_and_plan.md), шаг D.1; [progress.md](./progress.md)).
+- **Когда:** шаг D.1 (см. [design_and_plan.md](./design_and_plan.md); [progress.md](./progress.md)).

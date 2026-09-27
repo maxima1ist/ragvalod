@@ -1,4 +1,4 @@
-# LiteLLM with Redis-backed response cache (stage 11.1 / multi-replica).
+# LiteLLM with Redis-backed response cache (multi-replica).
 # Mount instead of litellm.yaml when Redis is available:
 #   volumes:
 #     - ./configs/litellm.redis.yaml:/app/config.yaml:ro

@@ -150,7 +150,7 @@ services:
       retries: 10
       start_period: 15s
 
-  # LiteLLM + Infinity — base stack from stage 3 (were under profile `models` during 0–2).
+  # LiteLLM + Infinity — part of the base stack.
   litellm:
     image: ghcr.io/berriai/litellm:main-stable
     ports:
@@ -218,7 +218,7 @@ services:
       retries: 40
       start_period: 600s
 
-  # Stage 8 — requires NVIDIA Container Toolkit (see docs/host_gpu_setup.md).
+  # local-llm profile — requires NVIDIA Container Toolkit (see docs/host_gpu_setup.md).
   # Default model: Qwen2.5-7B-Instruct AWQ (~5–6GB weights) for 8GB VRAM + RU.
   # Without profile `local-llm` this image is not pulled / started.
   vllm:
@@ -273,7 +273,7 @@ services:
       retries: 40
       start_period: 600s
 
-  # Stage 9 — monitoring profile (Langfuse v2 + Postgres; no ClickHouse).
+  # monitoring profile (Langfuse v2 + Postgres; no ClickHouse).
   langfuse-db:
     image: postgres:17
     profiles:

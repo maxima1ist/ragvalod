@@ -1,7 +1,7 @@
 # LiteLLM Proxy — DB-less (no DATABASE_URL).
 # Consumers call aliases; backends swap here without code changes.
 #
-# Stage 8: chat-default → local vLLM (compose profile `local-llm`).
+# chat-default → local vLLM (compose profile `local-llm`).
 # Without that profile chat completions fail until vLLM is up or you
 # restore the OpenRouter block below.
 model_list:
@@ -10,7 +10,7 @@ model_list:
       model: hosted_vllm/Qwen/Qwen2.5-7B-Instruct-AWQ
       api_base: http://vllm:8000/v1
       api_key: "none"
-      # OpenRouter fallback (stage 3): uncomment and comment the block above.
+      # OpenRouter fallback: uncomment and comment the block above.
       # model: openrouter/openrouter/free
       # api_key: os.environ/OPENROUTER_API_KEY
   - model_name: embedder-default

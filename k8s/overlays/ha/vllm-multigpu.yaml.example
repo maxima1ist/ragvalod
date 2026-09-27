@@ -1,4 +1,4 @@
-# Example: tensor parallelism across 2 GPUs on one pod (heavy models, stage 11.3).
+# Example: tensor parallelism across 2 GPUs on one pod (heavy models).
 # Apply manually or merge into kustomization when your nodes have 2+ GPUs.
 apiVersion: apps/v1
 kind: Deployment

@@ -1,4 +1,4 @@
-"""Validate Kubernetes kustomize builds (stage 11.2+)."""
+"""Validate Kubernetes kustomize builds."""
 
 from __future__ import annotations
 

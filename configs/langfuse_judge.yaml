@@ -1,10 +1,10 @@
-# Langfuse LLM-as-a-judge evaluators for ragvalod (stage 9.2 / deferred D.1).
+# Langfuse LLM-as-a-judge evaluators for ragvalod (deferred, step D.1).
 #
 # STATUS 2026-08-06: managed LLM-as-a-judge UI is NOT available on
 # langfuse/langfuse:2 (2.95 OSS) — entitlements playground /
 # model-based-evaluations are cloud-only in that build. Project Settings
 # "API Keys" (pk-lf-… / sk-lf-…) are for TRACE INGEST only, not LLM Connections.
-# Revisit after stage 11 (step D.1): upgrade to Langfuse v3 or external judge
+# Revisit (step D.1): upgrade to Langfuse v3 or external judge
 # script via LiteLLM + scores API.
 #
 # No custom judge code (when UI exists): configure these in the Langfuse UI

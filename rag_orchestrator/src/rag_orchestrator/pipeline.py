@@ -91,7 +91,7 @@ class RagPipeline:
                     "user_chars": len(user_prompt),
                 },
             )
-            # Persist full prompts for debug (stage 9.3); truncate only in logs.
+            # Persist full prompts for debug; truncate only in logs.
             prompt_span.end(
                 output={
                     "system_prompt": system_prompt,

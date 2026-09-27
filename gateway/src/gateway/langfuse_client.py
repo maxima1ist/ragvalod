@@ -1,4 +1,4 @@
-"""Langfuse HTTP client for Gateway aggregated stats (stage 9.4)."""
+"""Langfuse HTTP client for Gateway aggregated stats."""
 
 from __future__ import annotations
 

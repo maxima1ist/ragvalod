@@ -178,7 +178,7 @@ Useful `options` (all strings):
 
 After a full success, `GET /health` shows `data_initialized: true` and you can call `POST /generate`.
 
-Re-ingest is incremental: LlamaIndex `IngestionPipeline` + per-source docstore (under `/data/ingestion/docstores`) skips unchanged documents, re-embeds changed ones, and deletes Qdrant chunks for removed docs. Deterministic chunk IDs from stage 4.5 are kept for upserts.
+Re-ingest is incremental: LlamaIndex `IngestionPipeline` + per-source docstore (under `/data/ingestion/docstores`) skips unchanged documents, re-embeds changed ones, and deletes Qdrant chunks for removed docs. Deterministic chunk IDs are kept for upserts.
 
 ### Scheduled ingest
 
@@ -304,7 +304,7 @@ make smoke-qdrant | smoke-litellm | smoke-langfuse
 
 ## Docs
 
-- [Design & plan](docs/design_and_plan.md) — architecture and staged roadmap
+- [Design & plan](docs/design_and_plan.md) — architecture and roadmap
 - [Progress](docs/progress.md) — step tracker
 - [TODO](docs/TODO.md) — manual follow-ups (Google Drive live, LLM-as-a-judge)
 - [Host GPU setup](docs/host_gpu_setup.md) — NVIDIA driver + Container Toolkit (profile `local-llm` / vLLM)

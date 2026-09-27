@@ -1,4 +1,4 @@
-"""Unit tests for document dedup / delete sync (stage 10.3)."""
+"""Unit tests for document dedup / delete sync."""
 
 from __future__ import annotations
 

@@ -29,7 +29,7 @@
    sudo nvidia-ctk runtime configure --runtime=docker
    sudo systemctl restart docker
    ```
-3. **Проверка из Docker** (критерий готовности к этапу 8):
+3. **Проверка из Docker** (GPU виден внутри контейнера):
    ```bash
    sg docker -c 'docker run --rm --gpus all nvidia/cuda:12.6.0-base-ubuntu22.04 nvidia-smi'
    ```
@@ -63,6 +63,6 @@
 
 ## Связь с планом
 
-- План: [design_and_plan.md](./design_and_plan.md) §2.6 (железо), этап 8 (vLLM).
-- Прогресс: [progress.md](./progress.md) — этап 8, чекпоинт 5.
+- План: [design_and_plan.md](./design_and_plan.md) §2.6 (железо, vLLM).
+- Прогресс: [progress.md](./progress.md) — локальный инференс (vLLM), чекпоинт 5.
 - Compose: сервис `vllm`, профиль `local-llm`; без профиля образ не тянется.

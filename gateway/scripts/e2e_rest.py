@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Live REST smoke against a running Gateway (stage 6.4)."""
+"""Live REST smoke against a running Gateway."""
 
 from __future__ import annotations
 
