@@ -1,0 +1,14 @@
+# Mount kind-node /test_data (extraMount from repo test_data/) into ingestion.
+- op: add
+  path: /spec/template/spec/volumes/-
+  value:
+    name: test-data
+    hostPath:
+      path: /test_data
+      type: Directory
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    name: test-data
+    mountPath: /test_data
+    readOnly: true

@@ -1,0 +1,60 @@
+# Single-GPU laptop: no nvidia.com/gpu (kind has no device plugin),
+# hostPath devices + compose HF cache mounted into the kind node at /hf-cache.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm
+spec:
+  template:
+    spec:
+      containers:
+        - name: vllm
+          args:
+            - --model
+            - Qwen/Qwen2.5-7B-Instruct-AWQ
+            - --quantization
+            - awq_marlin
+            - --dtype
+            - auto
+            - --max-model-len
+            - "4096"
+            - --enforce-eager
+            - --gpu-memory-utilization
+            - "0.75"
+            - --max-num-seqs
+            - "16"
+            - --enable-auto-tool-choice
+            - --tool-call-parser
+            - hermes
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+          env:
+            - name: HF_HOME
+              value: /cache
+            - name: HF_HUB_DISABLE_XET
+              value: "1"
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: all
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: compute,utility
+            - name: LD_LIBRARY_PATH
+              value: /usr/lib/x86_64-linux-gnu
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: hf-cache
+              mountPath: /cache
+            - name: nvidia0
+              mountPath: /dev/nvidia0
+            - name: nvidiactl
+              mountPath: /dev/nvidiactl
+            - name: nvidia-uvm
+              mountPath: /dev/nvidia-uvm
+            - name: nvidia-uvm-tools
+              mountPath: /dev/nvidia-uvm-tools
+            - name: libcuda
+              mountPath: /usr/lib/x86_64-linux-gnu/libcuda.so.1
+            - name: libnvml
+              mountPath: /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1

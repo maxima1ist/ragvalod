@@ -1,0 +1,163 @@
+syntax = "proto3";
+
+package ragvalod.ingestion.v1;
+
+option py_generic_services = false;
+
+// Ingestion Service: scrape configured sources, chunk, embed, write to Qdrant.
+service IngestionService {
+  // Start an async ingest job for one or more sources.
+  // Sources without credentials are skipped when all_with_credentials is true.
+  rpc TriggerIngest(TriggerIngestRequest) returns (TriggerIngestResponse);
+
+  // Job status including per-source progress / result / error.
+  rpc GetJobStatus(GetJobStatusRequest) returns (GetJobStatusResponse);
+
+  // List registered data-source adapters.
+  rpc ListSources(ListSourcesRequest) returns (ListSourcesResponse);
+
+  // Periodic ingest schedules (credentials encrypted at rest when present).
+  rpc UpsertSchedule(UpsertScheduleRequest) returns (UpsertScheduleResponse);
+  rpc ListSchedules(ListSchedulesRequest) returns (ListSchedulesResponse);
+  rpc DeleteSchedule(DeleteScheduleRequest) returns (DeleteScheduleResponse);
+  rpc RunSchedule(RunScheduleRequest) returns (RunScheduleResponse);
+
+  // Remove one stored document (all of its chunks) from a source.
+  // NOT_FOUND when that doc_id is not in the source docstore.
+  rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse);
+}
+
+message SourceSpec {
+  // Adapter name, e.g. "local_files", "notion", "google_drive".
+  string name = 1;
+  // Opaque credentials for this source (token, API key, etc.).
+  // One-shot ingest: in-memory only. Schedules: Fernet-encrypted at rest.
+  map<string, string> credentials = 2;
+  // Source-specific options (paths, filters, etc.).
+  map<string, string> options = 3;
+}
+
+message TriggerIngestRequest {
+  // Explicit list of sources to ingest. Ignored when all_with_credentials is true
+  // and credentials are provided via the sources list (sources still carry creds).
+  repeated SourceSpec sources = 1;
+  // If true, ingest every source for which credentials (or no-cred adapters) are present.
+  bool all_with_credentials = 2;
+}
+
+message TriggerIngestResponse {
+  string job_id = 1;
+}
+
+enum JobState {
+  JOB_STATE_UNSPECIFIED = 0;
+  JOB_STATE_PENDING = 1;
+  JOB_STATE_RUNNING = 2;
+  JOB_STATE_SUCCEEDED = 3;
+  JOB_STATE_FAILED = 4;
+  JOB_STATE_PARTIAL = 5; // some sources succeeded, some failed
+}
+
+enum SourceJobState {
+  SOURCE_JOB_STATE_UNSPECIFIED = 0;
+  SOURCE_JOB_STATE_PENDING = 1;
+  SOURCE_JOB_STATE_RUNNING = 2;
+  SOURCE_JOB_STATE_SUCCEEDED = 3;
+  SOURCE_JOB_STATE_FAILED = 4;
+  SOURCE_JOB_STATE_SKIPPED = 5;
+}
+
+message SourceJobStatus {
+  string source_name = 1;
+  SourceJobState state = 2;
+  string message = 3;
+  int32 documents_processed = 4;
+  int32 chunks_written = 5;
+  string error = 6;
+}
+
+message GetJobStatusRequest {
+  string job_id = 1;
+}
+
+message GetJobStatusResponse {
+  string job_id = 1;
+  JobState state = 2;
+  string message = 3;
+  repeated SourceJobStatus sources = 4;
+  // ISO-8601 timestamps; empty if not yet set.
+  string started_at = 5;
+  string finished_at = 6;
+}
+
+message ListSourcesRequest {}
+
+message SourceInfo {
+  string name = 1;
+  string description = 2;
+  // Whether the adapter requires credentials to activate.
+  bool requires_credentials = 3;
+}
+
+message ListSourcesResponse {
+  repeated SourceInfo sources = 1;
+}
+
+message UpsertScheduleRequest {
+  // Empty schedule_id creates a new schedule; non-empty updates an existing one.
+  string schedule_id = 1;
+  string name = 2;
+  // 5-field cron: minute hour day month day_of_week (APScheduler/crontab).
+  string cron = 3;
+  bool enabled = 4;
+  repeated SourceSpec sources = 5;
+  bool all_with_credentials = 6;
+}
+
+message UpsertScheduleResponse {
+  string schedule_id = 1;
+}
+
+message ListSchedulesRequest {}
+
+message ScheduleInfo {
+  string schedule_id = 1;
+  string name = 2;
+  string cron = 3;
+  bool enabled = 4;
+  // Source adapter names only — credentials are never returned.
+  repeated string source_names = 5;
+  bool all_with_credentials = 6;
+  string last_run_at = 7;
+  string last_job_id = 8;
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+message ListSchedulesResponse {
+  repeated ScheduleInfo schedules = 1;
+}
+
+message DeleteScheduleRequest {
+  string schedule_id = 1;
+}
+
+message DeleteScheduleResponse {}
+
+message RunScheduleRequest {
+  string schedule_id = 1;
+}
+
+message RunScheduleResponse {
+  string job_id = 1;
+}
+
+message DeleteDocumentRequest {
+  // Adapter name, e.g. "notion", "local_files".
+  string source = 1;
+  // Document id stored at ingest (Notion page id, local file path, …).
+  // Empty deletes every stored document for the source.
+  string doc_id = 2;
+}
+
+message DeleteDocumentResponse {}

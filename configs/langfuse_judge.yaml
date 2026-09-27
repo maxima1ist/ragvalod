@@ -1,0 +1,72 @@
+# External LLM-as-a-judge for rag.generate traces.
+#
+# Implemented by scripts/judge_traces.py (`make judge`). This file is the rubric,
+# not something Langfuse loads. Managed evals UI is unavailable on
+# langfuse/langfuse:2 (2.95 OSS).
+#
+# chat-default stays on local vLLM. The judge is a different LiteLLM alias:
+#
+#   model_name: judge-default
+#   model:      openrouter/qwen/qwen3.8-27b:free
+#   model_name: judge-fallback
+#   model:      openrouter/nvidia/nemotron-3-super-120b-a12b:free
+#   api_key:    os.environ/OPENROUTER_API_KEY
+#
+# The script reads Langfuse (query, answer, metadata.used_chunks), calls
+# LiteLLM /v1/chat/completions with judge-default, and POSTs numeric scores.
+# Traces that already have all three scores are skipped. Default --limit is 5.
+#
+# Compose profile monitoring runs this about once an hour (service judge,
+# JUDGE_INTERVAL_SECONDS). Kubernetes CronJob judge uses the same image with
+# a one-shot command so the schedule is not doubled.
+#
+# Bring up LiteLLM and Langfuse, then from the host:
+#   make judge
+#   uv run python scripts/judge_traces.py --dry-run
+#   uv run python scripts/judge_traces.py --trace-id <id>
+
+version: 1
+
+judge_llm:
+  provider: openrouter
+  litellm_alias: judge-default
+  model: qwen/qwen3.8-27b:free
+  fallback_alias: judge-fallback
+  fallback_model: nvidia/nemotron-3-super-120b-a12b:free
+
+variable_mapping:
+  input: trace.input.query
+  output: trace.output.answer
+  context: trace.metadata.used_chunks
+
+evaluators:
+  - name: faithfulness
+    source: ragas
+    score_type: numeric
+    description: >
+      Fraction of answer claims supported by retrieved context.
+      No ground-truth answer required.
+    variables: [output, context]
+
+  - name: answer_relevancy
+    source: ragas
+    score_type: numeric
+    description: >
+      How well the answer addresses the user query (answer relevancy).
+    variables: [input, output]
+
+  - name: context_precision
+    source: ragas
+    score_type: numeric
+    description: >
+      Whether retrieved chunks are relevant to the query (context precision).
+      Without ground truth, the judge scores context against the question.
+    variables: [input, context]
+
+evaluation_rule:
+  target: live_traces
+  filter:
+    name: rag.generate
+  # Free OpenRouter models are rate-limited; the script scores at most --limit
+  # unscored traces per run (default 5), not every new trace.
+  command: python scripts/judge_traces.py

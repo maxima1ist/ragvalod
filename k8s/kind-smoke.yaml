@@ -1,0 +1,11 @@
+# Ephemeral kind cluster for local smoke (no Ingress / GPU).
+# Gateway is reached via: kubectl -n ragvalod port-forward svc/gateway 8000:8000
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraMounts:
+      # Repo smoke corpus → ingestion /test_data (see overlays/local/ingestion-testdata.yaml).
+      # hostPath is rewritten by scripts/kind_create.sh to an absolute clone path.
+      - hostPath: __RAGVALOD_TEST_DATA__
+        containerPath: /test_data

@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ragvalod
+resources:
+  - namespace.yaml
+  - qdrant.yaml
+  - infinity.yaml
+  - litellm.yaml
+  - vllm.yaml
+  - ingestion.yaml
+  - rag-orchestrator.yaml
+  - gateway.yaml
+  - ingress.yaml
+configMapGenerator:
+  - name: litellm-config
+    files:
+      - config.yaml=configs/litellm.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+images:
+  - name: ragvalod/gateway
+    newTag: latest
+  - name: ragvalod/ingestion
+    newTag: latest
+  - name: ragvalod/rag-orchestrator
+    newTag: latest

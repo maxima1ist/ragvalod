@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rag-orchestrator-grpc
+  labels:
+    app: rag-orchestrator
+spec:
+  ports:
+    - name: grpc
+      port: 50052
+      targetPort: 50052
+  selector:
+    app: rag-orchestrator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-orchestrator
+  labels:
+    app: rag-orchestrator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rag-orchestrator
+  template:
+    metadata:
+      labels:
+        app: rag-orchestrator
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: rag-orchestrator
+          image: ragvalod/rag-orchestrator:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 50052
+              name: grpc
+          env:
+            - name: RAG_GRPC_HOST
+              value: 0.0.0.0
+            - name: RAG_GRPC_PORT
+              value: "50052"
+            - name: RAG_QDRANT_HOST
+              value: qdrant
+            - name: RAG_QDRANT_HTTP_PORT
+              value: "6333"
+            - name: RAG_QDRANT_GRPC_PORT
+              value: "6334"
+            - name: RAG_LITELLM_BASE_URL
+              value: http://litellm:4000
+            - name: RAG_LITELLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ragvalod-secrets
+                  key: LITELLM_MASTER_KEY
+            - name: RAG_EMBEDDING_MODEL_ALIAS
+              value: embedder-default
+            - name: RAG_EMBEDDING_MODEL_NAME
+              value: intfloat/multilingual-e5-small
+            - name: RAG_EMBEDDING_QUERY_PREFIX
+              value: "query: "
+            - name: RAG_RERANKER_MODEL_ALIAS
+              value: reranker-default
+            - name: RAG_CHAT_MODEL_ALIAS
+              value: chat-default
+            - name: RAG_LANGFUSE_HOST
+              value: http://langfuse:3000
+            - name: RAG_LANGFUSE_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ragvalod-secrets
+                  key: LANGFUSE_PUBLIC_KEY
+                  optional: true
+            - name: RAG_LANGFUSE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ragvalod-secrets
+                  key: LANGFUSE_SECRET_KEY
+                  optional: true
+            - name: RAG_DEFAULT_TOP_K
+              value: "50"
+            - name: RAG_DEFAULT_RERANK_TOP_N
+              value: "5"
+          readinessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - |
+                  import grpc
+                  from grpc_health.v1 import health_pb2, health_pb2_grpc
+                  c = grpc.insecure_channel("127.0.0.1:50052")
+                  s = health_pb2_grpc.HealthStub(c)
+                  r = s.Check(health_pb2.HealthCheckRequest())
+                  assert r.status == 1
+            initialDelaySeconds: 10
+            periodSeconds: 5

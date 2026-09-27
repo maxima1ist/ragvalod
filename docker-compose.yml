@@ -1,0 +1,388 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.14.1
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - ragvalod
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/6333'"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+      network: host
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      GATEWAY_HOST: "0.0.0.0"
+      GATEWAY_PORT: "8000"
+      GATEWAY_API_KEY: ${GATEWAY_API_KEY:-change-me}
+      GATEWAY_INGESTION_GRPC_ADDR: "ingestion:50051"
+      GATEWAY_RAG_GRPC_ADDR: "rag_orchestrator:50052"
+      GATEWAY_LITELLM_BASE_URL: "http://litellm:4000"
+      # Langfuse stats (profile `monitoring`); empty keys → /stats reports disabled.
+      GATEWAY_LANGFUSE_HOST: ${LANGFUSE_HOST:-http://langfuse:3000}
+      GATEWAY_LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      GATEWAY_LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+    depends_on:
+      ingestion:
+        condition: service_healthy
+      rag_orchestrator:
+        condition: service_healthy
+    networks:
+      - ragvalod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\"",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  ingestion:
+    build:
+      context: .
+      dockerfile: ingestion/Dockerfile
+      network: host
+    ports:
+      - "50051:50051"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      INGESTION_GRPC_HOST: "0.0.0.0"
+      INGESTION_GRPC_PORT: "50051"
+      INGESTION_QDRANT_HOST: "qdrant"
+      INGESTION_QDRANT_HTTP_PORT: "6333"
+      INGESTION_QDRANT_GRPC_PORT: "6334"
+      INGESTION_LITELLM_BASE_URL: "http://litellm:4000"
+      INGESTION_LITELLM_API_KEY: ${LITELLM_MASTER_KEY:-sk-ragvalod-local}
+      # Default corpus for real usage (host ./data). Smoke corpus is /test_data.
+      INGESTION_LOCAL_FILES_DIR: "/data/local_files"
+      INGESTION_EMBEDDING_MODEL_ALIAS: "embedder-default"
+      INGESTION_EMBEDDING_MODEL_NAME: "intfloat/multilingual-e5-small"
+      INGESTION_EMBEDDING_DOC_PREFIX: "passage: "
+      INGESTION_DATA_DIR: "/data/ingestion"
+      INGESTION_CREDENTIALS_ENCRYPTION_KEY: ${INGESTION_CREDENTIALS_ENCRYPTION_KEY:-}
+      INGESTION_CHUNK_SIZE: ${INGESTION_CHUNK_SIZE:-512}
+      INGESTION_CHUNK_OVERLAP: ${INGESTION_CHUNK_OVERLAP:-100}
+    volumes:
+      - ${LOCAL_FILES_DIR:-./data}:/data/local_files:ro
+      - ./test_data:/test_data:ro
+      - ingestion_data:/data/ingestion
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      litellm:
+        condition: service_healthy
+    networks:
+      - ragvalod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import grpc; from grpc_health.v1 import health_pb2, health_pb2_grpc; c=grpc.insecure_channel('127.0.0.1:50051'); s=health_pb2_grpc.HealthStub(c); r=s.Check(health_pb2.HealthCheckRequest()); assert r.status==1\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  rag_orchestrator:
+    build:
+      context: .
+      dockerfile: rag_orchestrator/Dockerfile
+      network: host
+    ports:
+      - "50052:50052"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      RAG_GRPC_HOST: "0.0.0.0"
+      RAG_GRPC_PORT: "50052"
+      RAG_QDRANT_HOST: "qdrant"
+      RAG_QDRANT_HTTP_PORT: "6333"
+      RAG_QDRANT_GRPC_PORT: "6334"
+      RAG_LITELLM_BASE_URL: "http://litellm:4000"
+      RAG_LITELLM_API_KEY: ${LITELLM_MASTER_KEY:-sk-ragvalod-local}
+      RAG_EMBEDDING_MODEL_ALIAS: "embedder-default"
+      RAG_EMBEDDING_MODEL_NAME: "intfloat/multilingual-e5-small"
+      RAG_EMBEDDING_QUERY_PREFIX: "query: "
+      RAG_RERANKER_MODEL_ALIAS: "reranker-default"
+      RAG_CHAT_MODEL_ALIAS: "chat-default"
+      # Langfuse (profile `monitoring`); empty keys → tracing no-op.
+      RAG_LANGFUSE_HOST: ${LANGFUSE_HOST:-http://langfuse:3000}
+      RAG_LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      RAG_LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      RAG_DEFAULT_TOP_K: ${RAG_DEFAULT_TOP_K:-50}
+      RAG_DEFAULT_RERANK_TOP_N: ${RAG_DEFAULT_RERANK_TOP_N:-5}
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      litellm:
+        condition: service_healthy
+    networks:
+      - ragvalod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import grpc; from grpc_health.v1 import health_pb2, health_pb2_grpc; c=grpc.insecure_channel('127.0.0.1:50052'); s=health_pb2_grpc.HealthStub(c); r=s.Check(health_pb2.HealthCheckRequest()); assert r.status==1\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  # LiteLLM + Infinity — part of the base stack.
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./configs/litellm.yaml:/app/config.yaml:ro
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-ragvalod-local}
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--host", "0.0.0.0"]
+    depends_on:
+      infinity:
+        condition: service_healthy
+      # When profile local-llm is off, this dependency is skipped (Compose required: false).
+      vllm:
+        condition: service_healthy
+        required: false
+    networks:
+      - ragvalod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness')\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  infinity:
+    image: michaelf34/infinity:latest-cpu
+    ports:
+      - "7997:7997"
+    volumes:
+      - hf_cache:/app/.cache
+    environment:
+      HF_HOME: /app/.cache
+    command:
+      [
+        "v2",
+        "--engine",
+        "torch",
+        "--model-id",
+        "intfloat/multilingual-e5-small",
+        "--model-id",
+        "BAAI/bge-reranker-v2-m3",
+        "--port",
+        "7997",
+      ]
+    networks:
+      - ragvalod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:7997/health')\"",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 600s
+
+  # local-llm profile — requires NVIDIA Container Toolkit (see docs/host_gpu_setup.md).
+  # Default model: Qwen2.5-7B-Instruct AWQ (~5–6GB weights) for 8GB VRAM + RU.
+  # Without profile `local-llm` this image is not pulled / started.
+  vllm:
+    image: vllm/vllm-openai:v0.9.2
+    profiles:
+      - local-llm
+    ports:
+      - "8001:8000"
+    ipc: host
+    gpus: all
+    environment:
+      HUGGING_FACE_HUB_TOKEN: ${HUGGING_FACE_HUB_TOKEN:-}
+      HF_HOME: /root/.cache/huggingface
+      # HF Xet CDN often fails DNS inside containers; classic hub download is reliable.
+      HF_HUB_DISABLE_XET: "1"
+      # Keep below 1.0 on laptops sharing VRAM with the display.
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    command:
+      - "--model"
+      - "${MODEL_NAME:-Qwen/Qwen2.5-7B-Instruct-AWQ}"
+      - "--quantization"
+      - "${VLLM_QUANTIZATION:-awq_marlin}"
+      - "--dtype"
+      - "auto"
+      - "--max-model-len"
+      - "${MAX_MODEL_LEN:-4096}"
+      - "--enforce-eager"
+      - "--gpu-memory-utilization"
+      - "${VLLM_GPU_MEMORY_UTILIZATION:-0.85}"
+      - "--max-num-seqs"
+      - "${VLLM_MAX_NUM_SEQS:-64}"
+      # Needed for Langfuse LLM-as-a-judge (structured tool calls via LiteLLM).
+      # Qwen2.5 Instruct uses Hermes-style tool format.
+      - "--enable-auto-tool-choice"
+      - "--tool-call-parser"
+      - "${VLLM_TOOL_CALL_PARSER:-hermes}"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8000"
+    networks:
+      - ragvalod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://127.0.0.1:8000/v1/models >/dev/null || exit 1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 600s
+
+  # monitoring profile (Langfuse v2 + Postgres; no ClickHouse).
+  langfuse-db:
+    image: postgres:17
+    profiles:
+      - monitoring
+    environment:
+      POSTGRES_USER: ${LANGFUSE_POSTGRES_USER:-langfuse}
+      POSTGRES_PASSWORD: ${LANGFUSE_POSTGRES_PASSWORD:-langfuse}
+      POSTGRES_DB: ${LANGFUSE_POSTGRES_DB:-langfuse}
+    volumes:
+      - langfuse_pg_data:/var/lib/postgresql/data
+    networks:
+      - ragvalod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+
+  langfuse:
+    image: langfuse/langfuse:2
+    profiles:
+      - monitoring
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://${LANGFUSE_POSTGRES_USER:-langfuse}:${LANGFUSE_POSTGRES_PASSWORD:-langfuse}@langfuse-db:5432/${LANGFUSE_POSTGRES_DB:-langfuse}
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-ragvalod-nextauth-dev-secret}
+      SALT: ${LANGFUSE_SALT:-ragvalod-salt-dev}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+      NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL:-http://localhost:3000}
+      TELEMETRY_ENABLED: "false"
+      # Seed org/project/API keys on first boot (local-dev defaults).
+      LANGFUSE_INIT_ORG_ID: ${LANGFUSE_INIT_ORG_ID:-ragvalod-org}
+      LANGFUSE_INIT_ORG_NAME: ${LANGFUSE_INIT_ORG_NAME:-ragvalod}
+      LANGFUSE_INIT_PROJECT_ID: ${LANGFUSE_INIT_PROJECT_ID:-ragvalod}
+      LANGFUSE_INIT_PROJECT_NAME: ${LANGFUSE_INIT_PROJECT_NAME:-ragvalod}
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-ragvalod-local}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-ragvalod-local}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:-admin@ragvalod.local}
+      LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME:-admin}
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-ragvalod-admin}
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+    networks:
+      - ragvalod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://$$(hostname -i):3000/api/public/health | grep -q '\"status\":\"OK\"'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  # Hourly LLM-as-a-judge. Same profile as Langfuse; talks to LiteLLM on the compose network.
+  judge:
+    build:
+      context: .
+      dockerfile: judge/Dockerfile
+    profiles:
+      - monitoring
+    environment:
+      JUDGE_KEEP_SERVICE_HOSTS: "1"
+      JUDGE_INTERVAL_SECONDS: ${JUDGE_INTERVAL_SECONDS:-3600}
+      JUDGE_LIMIT: ${JUDGE_LIMIT:-5}
+      LANGFUSE_HOST: http://langfuse:3000
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-ragvalod-local}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-ragvalod-local}
+      LITELLM_BASE_URL: http://litellm:4000
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-ragvalod-local}
+    depends_on:
+      langfuse:
+        condition: service_healthy
+      litellm:
+        condition: service_healthy
+    networks:
+      - ragvalod
+    restart: unless-stopped
+
+  # Optional Redis for LiteLLM response cache (configs/litellm.redis.yaml).
+  # docker compose --profile cache-redis up -d redis
+  redis:
+    image: redis:7-alpine
+    profiles:
+      - cache-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ragvalod
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+networks:
+  ragvalod:
+    driver: bridge
+
+volumes:
+  qdrant_data:
+  hf_cache:
+  langfuse_pg_data:
+  ingestion_data:

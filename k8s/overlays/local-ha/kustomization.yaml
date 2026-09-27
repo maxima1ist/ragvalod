@@ -1,0 +1,19 @@
+# HA overlay without GPU / Ingress — for kind smoke of replica + Redis cache.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ragvalod
+resources:
+  - ../ha
+images:
+  - name: ghcr.io/berriai/litellm
+    newName: ragvalod/litellm
+    newTag: local
+patches:
+  - path: scale-vllm-off.yaml
+  - path: delete-ingress.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: ingestion
+    path: ingestion-testdata.yaml

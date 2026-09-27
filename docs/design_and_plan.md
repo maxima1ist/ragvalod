@@ -110,7 +110,7 @@ model_list:
 Self-hosted модели — отдельные inference-контейнеры, жизненным циклом которых управляют compose-профили (LiteLLM их не поднимает, только проксирует к ним):
 
 - **vLLM** (официальный образ `vllm/vllm-openai`) — LLM; тяжёлый, GPU, поднимается только под профилем `local-llm`. Без профиля LLM-алиас указывает на внешний API. Выбран среди альтернатив (SGLang, TRT-LLM, Ollama / llama.cpp, TGI): индустриальный дефолт с крупнейшей экосистемой и поддержкой моделей «с первого дня релиза», нативный OpenAI-совместимый сервер, квантизация AWQ/GPTQ из коробки (7B в 4-bit укладывается в 8 ГБ VRAM тестового стенда), путь масштабирования до мульти-GPU (tensor parallelism). SGLang сопоставим по производительности и остаётся кандидатом на замену; TRT-LLM даёт максимум на NVIDIA, но требует компиляции движков под конкретную GPU; Ollama/llama.cpp удобны для десктопа, но слабее под конкурентной нагрузкой (батчинг, throughput) и это не production-паттерн; TGI уступает vLLM по покрытию моделей и фичам.
-- **Infinity** (`michaelfeil/infinity`) — эмбеддер и реранкер; умеет несколько моделей в одном контейнере, работает на CPU, лёгкий — входит в базовый состав compose (нужен для ингеста с первого дня). Выбран среди альтернатив (HF TEI, sentence-transformers внутри сервисов, vLLM, Ollama): единственный закрывает **и embeddings, и rerank в одном CPU-контейнере** с API, которое LiteLLM понимает нативно (провайдер `infinity/`). TEI (Rust) быстрее, но хостит одну модель на инстанс — эмбеддер + реранкер потребовали бы двух контейнеров; sentence-transformers в сервисах затащил бы torch в их образы; vLLM для эмбеддингов — GPU-overkill; Ollama не умеет rerank. При желании эмбеддинги/реранк также переключаются на внешние API (OpenAI, Cohere, Jina) правкой конфига.
+- **Infinity** (`michaelf34/infinity`, CPU-тег `latest-cpu`) — эмбеддер и реранкер; умеет несколько моделей в одном контейнере, работает на CPU, лёгкий — входит в базовый состав compose (нужен для ингеста с первого дня). (2026-08-04: в черновике плана ошибочно фигурировал `michaelfeil/infinity` — корректный Docker Hub namespace `michaelf34`.) Выбран среди альтернатив (HF TEI, sentence-transformers внутри сервисов, vLLM, Ollama): единственный закрывает **и embeddings, и rerank в одном CPU-контейнере** с API, которое LiteLLM понимает нативно (провайдер `infinity/`). TEI (Rust) быстрее, но хостит одну модель на инстанс — эмбеддер + реранкер потребовали бы двух контейнеров; sentence-transformers в сервисах затащил бы torch в их образы; vLLM для эмбеддингов — GPU-overkill; Ollama не умеет rerank. При желании эмбеддинги/реранк также переключаются на внешние API (OpenAI, Cohere, Jina) правкой конфига.
 
 Такой дизайн решает проблему «тяжёлой библиотеки, когда она не нужна» (в сервисах нет torch/CUDA), и упрощает замену движка (SGLang, TRT-LLM — или TEI для эмбеддингов) в будущем.
 
@@ -171,7 +171,7 @@ Self-hosted модели — отдельные inference-контейнеры, 
 
 ### Этап 0: Подготовка окружения и инфраструктуры
 
-**Шаг 0.1:** Установка Docker и Docker Compose; NVIDIA Container Toolkit (нужен только для профиля `local-llm`).
+**Шаг 0.1:** Установка Docker и Docker Compose; NVIDIA Container Toolkit (нужен только для профиля `local-llm`). Практическая шпаргалка по хосту (драйвер, device nodes, toolkit, отличия ноутбук/десктоп/сервер) — [host_gpu_setup.md](./host_gpu_setup.md).
 
 **Шаг 0.2:** Создание структуры репозитория. Принцип: каждый сервис — самодостаточный модуль (код, тесты, Dockerfile, свои скрипты — всё внутри его директории); в корне лежит только то, что шарится между модулями (proto, общие конфиги) и то, что управляет системой целиком (docker-compose/K8s, скрипты запуска всего ансамбля):
 ```
@@ -201,7 +201,7 @@ ragvalod/
 
 LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные компоненты на готовых образах: у них нет модулей в репозитории, только конфигурация в compose/`configs/`.
 
-**Шаг 0.3:** docker-compose.yml с сервисами `gateway`, `ingestion`, `rag_orchestrator`, `litellm`, `infinity`, `qdrant`; профили: `local-llm` (vLLM), `monitoring` (Langfuse). Сети, volumes (данные Qdrant, кэш HuggingFace), переменные окружения.
+**Шаг 0.3:** docker-compose.yml с сервисами `gateway`, `ingestion`, `rag_orchestrator`, `litellm`, `infinity`, `qdrant`; профили: `local-llm` (vLLM), `monitoring` (Langfuse). (2026-08-04: на этапах 0–2 `litellm`/`infinity` временно были под профилем `models`, чтобы не тянуть веса до этапа 3; с этапа 3 снова в базовом составе.) Сети, volumes (данные Qdrant, кэш HuggingFace), переменные окружения.
 
 **Шаг 0.4:** Настроить общий тулинг: генерация gRPC-кода из `proto/` (makefile/скрипт), линтеры, pytest, каркасы debug-скриптов.
 
@@ -231,7 +231,7 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 
 Идёт до Ingestion Service, потому что ингест зависит от эмбеддингов через LiteLLM.
 
-**Шаг 3.1:** Сервис `litellm` в compose (DB-less режим — без Postgres и `DATABASE_URL`, см. раздел 2.2; конфиг `configs/litellm.yaml`): алиасы `chat-default` (первый бекенд — внешний OpenAI-совместимый API), `embedder-default`, `reranker-default`. Ключи внешних API — через переменные окружения.
+**Шаг 3.1:** Сервис `litellm` в compose (DB-less режим — без Postgres и `DATABASE_URL`, см. раздел 2.2; конфиг `configs/litellm.yaml`): алиасы `chat-default` (первый бекенд — внешний OpenAI-совместимый API; 2026-08-04: OpenRouter через `OPENROUTER_API_KEY`, модель `openrouter/free`), `embedder-default`, `reranker-default`. Ключи внешних API — через переменные окружения.
 
 **Шаг 3.2:** Сервис `infinity` в compose (CPU): эмбеддер `intfloat/multilingual-e5-small` и реранкер `BAAI/bge-reranker-v2-m3` в одном контейнере; маппинг алиасов `embedder-default`/`reranker-default` на него в конфиге LiteLLM. Volume под кэш HuggingFace.
 
@@ -314,13 +314,14 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 
 ### Этап 8: Локальный инференс через vLLM
 
-**Шаг 8.1:** Выбрать модель под тестовый стенд: `mistralai/Mistral-7B-Instruct-v0.2` или `meta-llama/Meta-Llama-3-8B-Instruct` в 4-bit (AWQ/GPTQ).
+**Шаг 8.1:** Выбрать модель под тестовый стенд: `Qwen/Qwen2.5-7B-Instruct-AWQ` (4-bit AWQ, ~5–6 ГБ весов под RTX 3070 8 ГБ; нормальный русский). Ранее пробовали `TheBloke/Mistral-7B-Instruct-v0.2-AWQ` — быстрее/легче, но генерация почти только EN. FP16 7B на 8 ГБ не укладывается — только квантизация.
 
 **Шаг 8.2:** Добавить в compose сервис `vllm` (образ `vllm/vllm-openai`) под профилем `local-llm`:
 ```
---model <model_name> --dtype half --max-model-len 4096 --enforce-eager --gpu-memory-utilization 0.9
+--model Qwen/Qwen2.5-7B-Instruct-AWQ --quantization awq_marlin --dtype auto
+--max-model-len 4096 --enforce-eager --gpu-memory-utilization 0.85
 ```
-Примонтировать кэш HuggingFace. Без профиля образ не тянется и контейнер не поднимается.
+Примонтировать кэш HuggingFace. Без профиля образ не тянется и контейнер не поднимается. На ноутбуках с shared VRAM `gpu-memory-utilization` держать ≤0.85. Для скачивания весов в контейнере задать `HF_HUB_DISABLE_XET=1` (иначе частые DNS-ошибки HF Xet).
 
 **Шаг 8.3:** Перевести алиас `chat-default` в `configs/litellm.yaml` на vLLM-бекенд (`hosted_vllm/<model>`, `api_base: http://vllm:8000/v1`). Кода не требуется — переключение одной записью конфига, без изменений в остальных сервисах.
 
@@ -334,7 +335,7 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 
 **Шаг 9.1:** Поднять Langfuse под compose-профилем `monitoring`. Интеграция через SDK (HTTP): RAG Orchestrator трассирует каждый запрос (запрос, найденные чанки, промпт, ответ).
 
-**Шаг 9.2:** Judge без самописного кода: использовать встроенные **LLM-as-a-judge эвалюаторы Langfuse** — они вешаются на трейсы, асинхронно оценивают (запрос, контекст, ответ) внешней моделью и пишут score. Критерии и промпты не изобретать: взять стандартизированные RAG-метрики без ground truth из **Ragas** (faithfulness, answer relevancy, context precision). Шаг сводится к конфигурации эвалюаторов, а не к реализации.
+**Шаг 9.2:** Judge без самописного кода: использовать встроенные **LLM-as-a-judge эвалюаторы Langfuse** — они вешаются на трейсы, асинхронно оценивают (запрос, контекст, ответ) внешней моделью и пишут score. Критерии и промпты не изобретать: взять стандартизированные RAG-метрики без ground truth из **Ragas** (faithfulness, answer relevancy, context precision). Шаг сводится к конфигурации эвалюаторов, а не к реализации. *(2026-08-06: на образе `langfuse/langfuse:2` / 2.95 OSS managed evals UI недоступен — entitlement cloud-only; рецепт оставлен в `configs/langfuse_judge.yaml`, включение — шаг D.1 после этапа 11.)*
 
 **Шаг 9.3:** Организовать персистентное хранение отладочных данных запросов (чанки, промпты) — то, что до этого только возвращалось в ответе и писалось в stdout-логи.
 
@@ -348,22 +349,35 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 
 **Шаг 10.2:** Периодический ингест (scheduler внутри Ingestion Service или внешний cron, дергающий API). На этом шаге внедрить шифрованное хранение кредов at rest (раздел 2.3).
 
-**Шаг 10.3:** Дедупликация и удаление — через **document management в `IngestionPipeline` LlamaIndex** (docstore + хэши документов): сам определяет новые/изменённые/удалённые документы и синхронизирует точки в Qdrant, свою логику диффа не пишем. При внедрении оценить, не заменяет ли он и ручной `upsert` по детерминированным ID из шага 4.5.
+**Шаг 10.3:** Дедупликация и удаление — через **document management в `IngestionPipeline` LlamaIndex** (docstore + хэши документов): сам определяет новые/изменённые/удалённые документы и синхронизирует точки в Qdrant, свою логику диффа не пишем. При внедрении оценить, не заменяет ли он и ручной `upsert` по детерминированным ID из шага 4.5. *(2026-08-06: per-source docstore + `UPSERTS_AND_DELETE`; детерминированные chunk ID сохранены — pipeline только skip/delete, запись в Qdrant по-прежнему через наш upsert.)*
+
+> ### 🛑 ЧЕКПОИНТ 7 — после этапа 10
+>
+> Пользователь валидирует: schedules + docstore skip/delete (live через Gateway); этап 10 закрыт.
+> **Google Drive live ingest** — не проверялся агентом (только unit-тесты с моком); при необходимости — ручная проверка с service account, см. [TODO.md](./TODO.md).
+> Переход к этапу 11 — только после явного подтверждения пользователя (если появится чекпоинт перед 11.x — остановиться).
 
 ---
 
 ### Этап 11: Оптимизация и подготовка к масштабированию (Kubernetes)
 
-**Шаг 11.1:** Профилирование узких мест (поиск, реранкинг, генерация): GPU для реранкера или уменьшение `top_k`, тюнинг встроенного кеша LiteLLM (при масштабировании — Redis-бекенд кеша), при нехватке VRAM — модель меньше (Phi-3-mini) или `max-model-len` 2048. Сюда же — эксперименты с качеством retrieval на метриках этапа 9: semantic chunking (`SemanticSplitterNodeParser`) против structure-aware разбиения из шага 4.4, тюнинг `chunk_size`/`chunk_overlap`.
+**Шаг 11.1:** Профилирование узких мест (поиск, реранкинг, генерация): GPU для реранкера или уменьшение `top_k`, тюнинг встроенного кеша LiteLLM (при масштабировании — Redis-бекенд кеша), при нехватке VRAM — модель меньше (Phi-3-mini) или `max-model-len` 2048. Сюда же — эксперименты с качеством retrieval на метриках этапа 9: semantic chunking (`SemanticSplitterNodeParser`) против structure-aware разбиения из шага 4.4, тюнинг `chunk_size`/`chunk_overlap`. Инструменты: `scripts/profile_rag.py`, `make profile-rag`, рецепт — [performance_tuning.md](./performance_tuning.md); Redis-кеш — `configs/litellm.redis.yaml`, compose-профиль `cache-redis`.
 
-**Шаг 11.2:** Kubernetes-манифесты (Deployment, Service, Ingress для Gateway, PersistentVolume для Qdrant). gRPC-архитектура ложится на K8s естественно (headless services, балансировка gRPC).
+**Шаг 11.2:** Kubernetes-манифесты (Deployment, Service, Ingress для Gateway, PersistentVolume для Qdrant). gRPC-архитектура ложится на K8s естественно (headless services, балансировка gRPC). Каталог `k8s/` (kustomize `base` + overlays), проверка — `make k8s-validate`.
 
-**Шаг 11.3:** Горизонтальное масштабирование: Qdrant — кластерный режим; Gateway и RAG Orchestrator — несколько реплик; vLLM — несколько инстансов и/или мульти-GPU (tensor parallelism) для тяжёлых моделей.
+**Шаг 11.3:** Горизонтальное масштабирование: Qdrant — кластерный режим; Gateway и RAG Orchestrator — несколько реплик; vLLM — несколько инстансов и/или мульти-GPU (tensor parallelism) для тяжёлых моделей. Overlay `k8s/overlays/ha` (реплики GW/RAG/LiteLLM, Redis-кеш); Qdrant cluster — `k8s/overlays/ha/qdrant-cluster.md`; multi-GPU vLLM — `vllm-multigpu.yaml.example`.
 
-**Шаг 11.4:** Секреты через Vault/KMS/Sealed Secrets; инфраструктурный мониторинг (Prometheus + Grafana): GPU, задержки, ошибки.
+**Шаг 11.4:** Секреты через Vault/KMS/Sealed Secrets; инфраструктурный мониторинг (Prometheus + Grafana): GPU, задержки, ошибки. Примеры: `k8s/examples/sealed-secret.yaml.example`, `external-secrets-vault.md`; overlay `k8s/overlays/observability`.
 
 ---
 
+### После этапа 11 (отложено)
+
+**Шаг D.1:** Внешний LLM-as-a-judge: `scripts/judge_traces.py` читает трейсы `rag.generate` и пишет scores в Langfuse. Модель — алиас LiteLLM `judge-default` (OpenRouter `qwen/qwen3.8-27b:free`), отдельно от `chat-default`. Рубрика — `configs/langfuse_judge.yaml`. Почасовой запуск: сервис Compose `judge` в профиле `monitoring`; в Kubernetes — CronJob в `k8s/overlays/monitoring`. Managed evals UI на `langfuse:2` (2.95 OSS) недоступен; Project API Keys (`pk-lf-…`) по-прежнему только для ingest трейсов.
+
+**Шаг D.2:** Ручная проверка Google Drive live ingest (10.1 — код и unit-тесты с моком; без live Google API). Service account / OAuth, `folder_id` или `file_ids`, расшаривание на SA email; см. [TODO.md](./TODO.md).
+
+---
 ## 4. Детали конфигурации и переменные окружения
 
 **API Gateway:**
@@ -371,7 +385,7 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 - `RAG_GRPC_ADDR` — например, `rag_orchestrator:50052`.
 - `LITELLM_BASE_URL` — например, `http://litellm:4000` (только для агрегированного healthcheck).
 - `GATEWAY_API_KEY` — ключ для аутентификации входящих запросов.
-- `LANGFUSE_HOST` — если используется мониторинг.
+- `LANGFUSE_HOST` / `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` — для `GET /stats` (профиль `monitoring`).
 
 **Ingestion Service:**
 - `QDRANT_HOST`, `QDRANT_GRPC_PORT` (6334).
@@ -390,7 +404,13 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 - `EMBEDDING_MODEL_ALIAS`, `EMBEDDING_QUERY_PREFIX` (`query: ` для e5) — согласованы с индексацией, соответствие модели проверяется по манифесту коллекции (шаг 4.5).
 - `RERANKER_MODEL_ALIAS` — `reranker-default`.
 - `CHAT_MODEL_ALIAS` — `chat-default`.
-- `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` — если используется.
+- `LANGFUSE_HOST`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` — трассировка `rag.generate` (пустые ключи → no-op).
+
+**Langfuse (профиль `monitoring`):**
+- Compose: `langfuse` + `langfuse-db` (Postgres). UI на `:3000`.
+- Init-ключи/юзер через `LANGFUSE_INIT_*` / `LANGFUSE_PUBLIC_KEY`/`SECRET_KEY` (см. `.env.example`).
+- Judge: `scripts/judge_traces.py` (`make judge`) и рубрика `configs/langfuse_judge.yaml`. Вызов идёт в LiteLLM `judge-default`, не в UI Langfuse.
+- `ENCRYPTION_KEY` — 64 hex (`openssl rand -hex 32`).
 
 **LiteLLM Proxy:**
 - `configs/litellm.yaml` — model_list с алиасами и бекендами (см. раздел 2.2); смена бекенда (self-hosted ↔ внешний API) — правка этого файла, потребители не меняются.
@@ -402,9 +422,13 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 - Модели (эмбеддер, реранкер) задаются аргументами запуска контейнера в compose; volume под кэш HuggingFace.
 
 **vLLM (только профиль `local-llm`):**
-- `MODEL_NAME` — полное имя модели на HuggingFace.
-- `MAX_MODEL_LEN` — 4096.
-- Дополнительные флаги — см. документацию vLLM.
+- `MODEL_NAME` — полное имя модели на HuggingFace (дефолт `Qwen/Qwen2.5-7B-Instruct-AWQ`).
+- `VLLM_QUANTIZATION` — `awq` (для AWQ-весов).
+- `MAX_MODEL_LEN` — 4096 (при OOM снизить до 2048).
+- `VLLM_GPU_MEMORY_UTILIZATION` — 0.85 на ноутбуках с shared VRAM.
+- `VLLM_MAX_NUM_SEQS` — лимит параллельных seq (тюнинг на шаге 8.5).
+- `VLLM_TOOL_CALL_PARSER` — парсер tool calling (`hermes` для Qwen2.5); в compose также `--enable-auto-tool-choice` (нужно для Langfuse LLM-as-a-judge).
+- Хост: [host_gpu_setup.md](./host_gpu_setup.md).
 
 ---
 

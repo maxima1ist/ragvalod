@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ragvalod local
+.venv/
+uv.lock.bak
+*.egg-info/
+
+# Real local corpus (keep empty tracked dir); smoke samples live in test_data/
+data/*
+!data/.gitkeep
