@@ -9,7 +9,12 @@ from rag_orchestrator.config import Settings
 from rag_orchestrator.litellm_client import LiteLLMClient
 from rag_orchestrator.prompt import render_messages
 from rag_orchestrator.qdrant_reader import QdrantReader, RetrievedChunk
-from rag_orchestrator.tracing import NoOpTracer, Tracer, chunk_payloads
+from rag_orchestrator.tracing import (
+    TRACE_USED_CHUNK_TEXT_LIMIT,
+    NoOpTracer,
+    Tracer,
+    chunk_payloads,
+)
 
 logger = logging.getLogger("rag_orchestrator.pipeline")
 
@@ -118,7 +123,7 @@ class RagPipeline:
             )
             logger.info("answer chars=%s preview=%r", len(answer), answer[:200])
 
-            used_payload = chunk_payloads(used)
+            used_payload = chunk_payloads(used, text_limit=TRACE_USED_CHUNK_TEXT_LIMIT)
             trace.update(
                 output={"answer": answer},
                 metadata={

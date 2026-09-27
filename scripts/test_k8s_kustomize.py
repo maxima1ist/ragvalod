@@ -67,6 +67,24 @@ def test_local_overlays_mount_test_data() -> None:
         assert "path: /test_data" in result.stdout, overlay
 
 
+@pytest.mark.skipif(not _kubectl_available(), reason="kubectl not installed")
+def test_monitoring_overlay_runs_hourly_judge() -> None:
+    result = subprocess.run(
+        ["kubectl", "kustomize", str(ROOT / "k8s" / "overlays" / "monitoring")],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "kind: CronJob" in result.stdout
+    assert "name: judge" in result.stdout
+    assert "schedule: 0 * * * *" in result.stdout or "schedule: 0 * * * *" in result.stdout
+    assert "JUDGE_KEEP_SERVICE_HOSTS" in result.stdout
+    assert "http://langfuse:3000" in result.stdout
+    assert "http://litellm:4000" in result.stdout
+    assert "ragvalod/judge:latest" in result.stdout
+
+
 def test_k8s_base_manifests_exist() -> None:
     base = ROOT / "k8s" / "base"
     for name in (

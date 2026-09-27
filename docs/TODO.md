@@ -11,8 +11,7 @@
 
 ## Langfuse LLM-as-a-judge (шаг D.1)
 
-- **Статус:** трейсы `rag.generate` работают; managed evals UI на Langfuse 2.95 OSS недоступен.
-- **Варианты:** апгрейд Langfuse v3 (OSS evals) **или** внешний judge через LiteLLM + scores API.
-- **Критерии:** [configs/langfuse_judge.yaml](../configs/langfuse_judge.yaml) (Ragas: faithfulness, answer_relevancy, context_precision).
-- **Не путать:** Project API Keys (`pk-lf-…`) ≠ LLM Connections.
-- **Когда:** шаг D.1 (см. [design_and_plan.md](./design_and_plan.md); [progress.md](./progress.md)).
+- **Статус:** внешний judge есть (`scripts/judge_traces.py`, `make judge`). Профиль `monitoring` поднимает сервис `judge`, который повторяет прогон примерно раз в час. В Kubernetes то же расписание — CronJob `judge`. Managed evals UI на Langfuse 2.95 OSS по-прежнему нет.
+- **Модели:** `chat-default` — локальная Qwen (vLLM); `judge-default` — OpenRouter `qwen/qwen3.8-27b:free` через LiteLLM. Ключ — `OPENROUTER_API_KEY`.
+- **Критерии:** faithfulness, answer_relevancy, context_precision ([configs/langfuse_judge.yaml](../configs/langfuse_judge.yaml)).
+- **Проверка:** `make up-monitoring` (LiteLLM из базового стека тоже нужен). Сервис `judge` сам подхватывает новые трейсы; разовый прогон с хоста — `make judge`. В UI трейса и в `GET /stats` появляются три score. После правки `configs/litellm.yaml` пересоздать контейнер LiteLLM.

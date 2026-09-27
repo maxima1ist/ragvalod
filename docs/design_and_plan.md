@@ -373,7 +373,7 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 
 ### После этапа 11 (отложено)
 
-**Шаг D.1:** Включить рабочий Langfuse LLM-as-a-judge. На текущем `langfuse:2` (2.95 OSS) UI LLM Connections / model-based evals недоступен (entitlement). Варианты: апгрейд на Langfuse v3 (evals/playground в OSS) или внешний judge через LiteLLM + scores API. Рецепт метрик — `configs/langfuse_judge.yaml`. Не путать Project API Keys (`pk-lf-…`, ingest трейсов) с LLM Connections (вызов модели из Langfuse).
+**Шаг D.1:** Внешний LLM-as-a-judge: `scripts/judge_traces.py` читает трейсы `rag.generate` и пишет scores в Langfuse. Модель — алиас LiteLLM `judge-default` (OpenRouter `qwen/qwen3.8-27b:free`), отдельно от `chat-default`. Рубрика — `configs/langfuse_judge.yaml`. Почасовой запуск: сервис Compose `judge` в профиле `monitoring`; в Kubernetes — CronJob в `k8s/overlays/monitoring`. Managed evals UI на `langfuse:2` (2.95 OSS) недоступен; Project API Keys (`pk-lf-…`) по-прежнему только для ingest трейсов.
 
 **Шаг D.2:** Ручная проверка Google Drive live ingest (10.1 — код и unit-тесты с моком; без live Google API). Service account / OAuth, `folder_id` или `file_ids`, расшаривание на SA email; см. [TODO.md](./TODO.md).
 
@@ -409,7 +409,7 @@ LiteLLM, Infinity, vLLM и Qdrant — инфраструктурные комп�
 **Langfuse (профиль `monitoring`):**
 - Compose: `langfuse` + `langfuse-db` (Postgres). UI на `:3000`.
 - Init-ключи/юзер через `LANGFUSE_INIT_*` / `LANGFUSE_PUBLIC_KEY`/`SECRET_KEY` (см. `.env.example`).
-- Judge: конфиг `configs/langfuse_judge.yaml` (Ragas-метрики, маппинг переменных; настройка эвалюаторов в UI Langfuse, не код).
+- Judge: `scripts/judge_traces.py` (`make judge`) и рубрика `configs/langfuse_judge.yaml`. Вызов идёт в LiteLLM `judge-default`, не в UI Langfuse.
 - `ENCRYPTION_KEY` — 64 hex (`openssl rand -hex 32`).
 
 **LiteLLM Proxy:**

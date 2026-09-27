@@ -141,5 +141,5 @@
 
 ## После этапа 11 (отложено) — TODO
 
-- [ ] **Шаг D.1:** Включить Langfuse LLM-as-a-judge (сейчас недоступен на `langfuse/langfuse:2` / 2.95 OSS) — TODO: апгрейд на Langfuse v3 (где evals/playground в OSS) **или** внешний judge-скрипт через LiteLLM + запись scores в Langfuse API; критерии — `configs/langfuse_judge.yaml` (Ragas: faithfulness, answer_relevancy, context_precision). Project API Keys (`pk-lf-…`) ≠ LLM Connections.
+- [x] **Шаг D.1:** Внешний Langfuse LLM-as-a-judge — DONE 2026-09-27: `scripts/judge_traces.py` + `make judge`. Алиас `judge-default` → OpenRouter `qwen/qwen3.8-27b:free` (не `chat-default`). Почасовой прогон: сервис Compose `judge` (профиль `monitoring`) и CronJob `k8s/overlays/monitoring/judge-cronjob.yaml`. Критерии из `configs/langfuse_judge.yaml` пишутся в scores API. Managed evals UI на Langfuse 2.95 по-прежнему нет.
 - [ ] **Шаг D.2:** Google Drive — live ingest через Google API (этап 10.1: адаптер + мок-тесты OK; **реальный вызов Drive не проверялся**) — TODO: service account JSON или OAuth в `POST /ingest`, расшаренная папка/`folder_id`, poll job → `POST /generate` по содержимому; детали — [TODO.md](./TODO.md), README (Google Drive).

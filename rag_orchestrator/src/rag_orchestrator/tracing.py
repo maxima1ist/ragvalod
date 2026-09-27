@@ -275,6 +275,10 @@ def build_tracer(
     return LangfuseTracer(client)
 
 
+# Kept on the trace so the external judge can see a full ~512-token chunk.
+TRACE_USED_CHUNK_TEXT_LIMIT = 4000
+
+
 def chunk_payloads(chunks: list[Any], *, text_limit: int = 500) -> list[dict[str, Any]]:
     """Serialize retrieved chunks for Langfuse metadata (truncated text)."""
     rows: list[dict[str, Any]] = []

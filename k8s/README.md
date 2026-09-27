@@ -6,7 +6,7 @@
 
 - `base/` — одна реплика каждого сервиса, Ingress на Gateway `:8000`.
 - `overlays/ha/` — горизонтальное масштабирование Gateway/RAG, Redis-кеш LiteLLM.
-- `overlays/monitoring/` — Langfuse + Postgres.
+- `overlays/monitoring/` — Langfuse + Postgres и CronJob `judge` (раз в час, образ `ragvalod/judge`).
 - `overlays/secrets/` — пример SealedSecret / внешние секреты.
 
 ## Требования
@@ -24,6 +24,7 @@
 docker build -f gateway/Dockerfile -t ragvalod/gateway:latest .
 docker build -f ingestion/Dockerfile -t ragvalod/ingestion:latest .
 docker build -f rag_orchestrator/Dockerfile -t ragvalod/rag-orchestrator:latest .
+docker build -f judge/Dockerfile -t ragvalod/judge:latest .
 # push в ваш registry и обновите images: в overlays
 ```
 

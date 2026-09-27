@@ -13,6 +13,16 @@ model_list:
       # OpenRouter fallback: uncomment and comment the block above.
       # model: openrouter/openrouter/free
       # api_key: os.environ/OPENROUTER_API_KEY
+  # Judge only. Must stay a different model from chat-default.
+  # judge-fallback is used by scripts/judge_traces.py when the free Qwen pool returns 429.
+  - model_name: judge-default
+    litellm_params:
+      model: openrouter/qwen/qwen3.8-27b:free
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: judge-fallback
+    litellm_params:
+      model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+      api_key: os.environ/OPENROUTER_API_KEY
   - model_name: embedder-default
     litellm_params:
       model: openai/intfloat/multilingual-e5-small

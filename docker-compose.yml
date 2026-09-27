@@ -336,6 +336,31 @@ services:
       retries: 30
       start_period: 60s
 
+  # Hourly LLM-as-a-judge. Same profile as Langfuse; talks to LiteLLM on the compose network.
+  judge:
+    build:
+      context: .
+      dockerfile: judge/Dockerfile
+    profiles:
+      - monitoring
+    environment:
+      JUDGE_KEEP_SERVICE_HOSTS: "1"
+      JUDGE_INTERVAL_SECONDS: ${JUDGE_INTERVAL_SECONDS:-3600}
+      JUDGE_LIMIT: ${JUDGE_LIMIT:-5}
+      LANGFUSE_HOST: http://langfuse:3000
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-ragvalod-local}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-ragvalod-local}
+      LITELLM_BASE_URL: http://litellm:4000
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-ragvalod-local}
+    depends_on:
+      langfuse:
+        condition: service_healthy
+      litellm:
+        condition: service_healthy
+    networks:
+      - ragvalod
+    restart: unless-stopped
+
   # Optional Redis for LiteLLM response cache (configs/litellm.redis.yaml).
   # docker compose --profile cache-redis up -d redis
   redis:

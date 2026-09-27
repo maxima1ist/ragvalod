@@ -275,14 +275,16 @@ Maps stable aliases used by services:
 | Alias | Current backend |
 | --- | --- |
 | `chat-default` | Local vLLM (`http://vllm:8000/v1`) — needs profile `local-llm` |
+| `judge-default` | OpenRouter `qwen/qwen3.8-27b:free` — judge only, needs `OPENROUTER_API_KEY` |
+| `judge-fallback` | OpenRouter `nvidia/nemotron-3-super-120b-a12b:free` — used when `judge-default` is rate-limited |
 | `embedder-default` | Infinity (`intfloat/multilingual-e5-small`) |
 | `reranker-default` | Infinity (`BAAI/bge-reranker-v2-m3`) |
 
-Without `local-llm`, either start that profile or uncomment the OpenRouter block for `chat-default` and set `OPENROUTER_API_KEY`.
+Without `local-llm`, either start that profile or uncomment the OpenRouter block for `chat-default` and set `OPENROUTER_API_KEY`. `judge-default` stays on OpenRouter even when chat is local.
 
 ### `configs/langfuse_judge.yaml`
 
-Reference for LLM-as-a-judge evaluators in Langfuse (not auto-loaded). Point Langfuse’s LLM connection at LiteLLM (`http://litellm:4000/v1`, key = `LITELLM_MASTER_KEY`, model `chat-default`).
+Rubric for the external judge. `make judge` runs one pass from the host. With profile `monitoring`, service `judge` repeats that pass about once an hour (`JUDGE_INTERVAL_SECONDS`, default 3600) and writes faithfulness, answer relevancy, and context precision through the Langfuse scores API. It calls LiteLLM alias `judge-default`, not `chat-default`. Kubernetes uses a CronJob (`k8s/overlays/monitoring/judge-cronjob.yaml`) with the same image instead of the in-container loop.
 
 ---
 
@@ -292,12 +294,12 @@ Reference for LLM-as-a-judge evaluators in Langfuse (not auto-loaded). Point Lan
 make sync              # uv sync --all-packages --group dev
 make up                # docker compose up -d --build
 make up-local-llm      # + profile local-llm
-make up-monitoring     # + profile monitoring
+make up-monitoring     # + profile monitoring (Langfuse and the hourly judge)
 make up-all            # + local-llm + monitoring
 make down              # stop all profiles
 make clear-qdrant      # delete Qdrant collection `documents`
 make test / make lint
-make smoke-qdrant | smoke-litellm | smoke-langfuse
+make smoke-qdrant | smoke-litellm | smoke-langfuse | judge
 ```
 
 ---
@@ -306,5 +308,5 @@ make smoke-qdrant | smoke-litellm | smoke-langfuse
 
 - [Design & plan](docs/design_and_plan.md) — architecture and roadmap
 - [Progress](docs/progress.md) — step tracker
-- [TODO](docs/TODO.md) — manual follow-ups (Google Drive live, LLM-as-a-judge)
+- [TODO](docs/TODO.md) — manual follow-ups (Google Drive live, run `make judge`)
 - [Host GPU setup](docs/host_gpu_setup.md) — NVIDIA driver + Container Toolkit (profile `local-llm` / vLLM)

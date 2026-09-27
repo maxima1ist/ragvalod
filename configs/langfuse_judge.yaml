@@ -1,53 +1,44 @@
-# Langfuse LLM-as-a-judge evaluators for ragvalod (deferred, step D.1).
+# External LLM-as-a-judge for rag.generate traces.
 #
-# STATUS 2026-08-06: managed LLM-as-a-judge UI is NOT available on
-# langfuse/langfuse:2 (2.95 OSS) — entitlements playground /
-# model-based-evaluations are cloud-only in that build. Project Settings
-# "API Keys" (pk-lf-… / sk-lf-…) are for TRACE INGEST only, not LLM Connections.
-# Revisit (step D.1): upgrade to Langfuse v3 or external judge
-# script via LiteLLM + scores API.
+# Implemented by scripts/judge_traces.py (`make judge`). This file is the rubric,
+# not something Langfuse loads. Managed evals UI is unavailable on
+# langfuse/langfuse:2 (2.95 OSS).
 #
-# No custom judge code (when UI exists): configure these in the Langfuse UI
-# (Evaluators) or via Langfuse's managed catalog (Ragas partnership). Point the
-# Langfuse LLM connection at LiteLLM so the judge uses the same model gateway:
+# chat-default stays on local vLLM. The judge is a different LiteLLM alias:
 #
-#   base_url: http://litellm:4000/v1   (from Langfuse container network)
-#   api_key:  $LITELLM_MASTER_KEY
-#   model:    chat-default
+#   model_name: judge-default
+#   model:      openrouter/qwen/qwen3.8-27b:free
+#   model_name: judge-fallback
+#   model:      openrouter/nvidia/nemotron-3-super-120b-a12b:free
+#   api_key:    os.environ/OPENROUTER_API_KEY
 #
-# Prerequisite: vLLM must expose OpenAI tool calling (compose already sets
-# --enable-auto-tool-choice --tool-call-parser hermes for Qwen2.5).
-# Without that, Langfuse judge fails with tool_choice=auto errors.
+# The script reads Langfuse (query, answer, metadata.used_chunks), calls
+# LiteLLM /v1/chat/completions with judge-default, and POSTs numeric scores.
+# Traces that already have all three scores are skipped. Default --limit is 5.
 #
-# Trace field mapping (what RAG Orchestrator writes):
-#   {{input}}   ← trace.input.query
-#   {{output}}  ← trace.output.answer
-#   {{context}} ← trace.metadata.used_chunks[].text (join)
+# Compose profile monitoring runs this about once an hour (service judge,
+# JUDGE_INTERVAL_SECONDS). Kubernetes CronJob judge uses the same image with
+# a one-shot command so the schedule is not doubled.
 #
-# UI steps (when entitlement available; http://localhost:3000, project ragvalod):
-# 1) Settings → LLM Connections / LLM API Keys → OpenAI-compatible
-#    base http://litellm:4000/v1, key=LITELLM_MASTER_KEY, model chat-default
-# 2) Evaluators → create faithfulness / answer_relevancy / context_precision
-# 3) Map variables to trace fields above; rule: live traces name=rag.generate
-# 4) Run POST /generate → Scores appear on the new trace
-#
-# Bring up: docker compose --profile monitoring --profile local-llm up -d
-# UI:       http://localhost:3000  (admin@ragvalod.local / ragvalod-admin by default)
+# Bring up LiteLLM and Langfuse, then from the host:
+#   make judge
+#   uv run python scripts/judge_traces.py --dry-run
+#   uv run python scripts/judge_traces.py --trace-id <id>
 
 version: 1
 
 judge_llm:
-  provider: litellm
-  api_base: http://litellm:4000/v1
-  model: chat-default
-  # Use LITELLM_MASTER_KEY from .env as the OpenAI-compatible key in Langfuse.
+  provider: openrouter
+  litellm_alias: judge-default
+  model: qwen/qwen3.8-27b:free
+  fallback_alias: judge-fallback
+  fallback_model: nvidia/nemotron-3-super-120b-a12b:free
 
 variable_mapping:
   input: trace.input.query
   output: trace.output.answer
   context: trace.metadata.used_chunks
 
-# Ragas-aligned metrics without ground truth (run on live traces).
 evaluators:
   - name: faithfulness
     source: ragas
@@ -56,7 +47,6 @@ evaluators:
       Fraction of answer claims supported by retrieved context.
       No ground-truth answer required.
     variables: [output, context]
-    # In Langfuse UI: Evaluators → Ragas / Faithfulness (or equivalent catalog entry).
 
   - name: answer_relevancy
     source: ragas
@@ -64,20 +54,19 @@ evaluators:
     description: >
       How well the answer addresses the user query (answer relevancy).
     variables: [input, output]
-    # In Langfuse UI: Evaluators → Ragas / Answer Relevancy.
 
   - name: context_precision
     source: ragas
     score_type: numeric
     description: >
       Whether retrieved chunks are relevant to the query (context precision).
-      Without GT, use the LLM-judge variant that scores context vs question.
+      Without ground truth, the judge scores context against the question.
     variables: [input, context]
-    # In Langfuse UI: Evaluators → Ragas / Context Precision (or Context Relevance).
 
 evaluation_rule:
   target: live_traces
   filter:
     name: rag.generate
-  sampling_rate: 1.0
-  # Attach all three evaluators to matching traces after mapping variables above.
+  # Free OpenRouter models are rate-limited; the script scores at most --limit
+  # unscored traces per run (default 5), not every new trace.
+  command: python scripts/judge_traces.py

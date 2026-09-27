@@ -1,7 +1,7 @@
-.PHONY: help sync protos lint test smoke-qdrant smoke-litellm smoke-langfuse clear-qdrant bench-local-llm profile-rag k8s-sync-config k8s-validate up up-local-llm up-monitoring up-all down
+.PHONY: help sync protos lint test smoke-qdrant smoke-litellm smoke-langfuse judge clear-qdrant bench-local-llm profile-rag k8s-sync-config k8s-validate up up-local-llm up-monitoring up-all down
 
 help:
-	@echo "Targets: sync | protos | lint | test | smoke-qdrant | smoke-litellm | smoke-langfuse | clear-qdrant | bench-local-llm | profile-rag | k8s-validate | up | up-local-llm | up-monitoring | up-all | down"
+	@echo "Targets: sync | protos | lint | test | smoke-qdrant | smoke-litellm | smoke-langfuse | judge | clear-qdrant | bench-local-llm | profile-rag | k8s-validate | up | up-local-llm | up-monitoring | up-all | down"
 
 sync:
 	uv sync --all-packages --group dev
@@ -31,6 +31,9 @@ smoke-litellm:
 
 smoke-langfuse:
 	LANGFUSE_HOST=$${LANGFUSE_HOST:-http://localhost:3000} uv run python scripts/smoke_langfuse.py
+
+judge:
+	LANGFUSE_HOST=$${LANGFUSE_HOST:-http://localhost:3000} LITELLM_BASE_URL=$${LITELLM_BASE_URL:-http://localhost:4000} uv run python scripts/judge_traces.py
 
 bench-local-llm:
 	uv run python scripts/bench_local_llm.py
